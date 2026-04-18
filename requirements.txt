@@ -3,6 +3,13 @@ google-generativeai
 cohere
 azure-cognitiveservices-speech
 python-dotenv
-SpeechRecognition
-pyaudio
+SpeechRecognition==3.10.1
+pyaudio==0.2.14
+azure-cognitiveservices-speech==1.36.0
+python-dotenv==1.0.1
+Pillow==10.3.0
+spotipy==2.23.0
+keyboard==0.13.5
+pycaw==20230407
+comtypes==1.4.1
 requests

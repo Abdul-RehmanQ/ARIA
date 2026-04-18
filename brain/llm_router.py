@@ -13,7 +13,8 @@ CRITICAL RULES:
 2. DO NOT output markdown, bullet points, asterisks, emojis, or code blocks. Audio systems cannot read markdown. Use perfectly natural plain English.
 3. Be polite, direct, and slightly formal but friendly.
 4. You have access to tools. If the user asks you to do something that a tool can do, USE THE TOOL.
-5. NEVER output conversational text in the same response as a tool call. If you need to use a tool, only output the tool call payload.
+5. Provide a short verbal response alongside your tool calls to acknowledge the action being taken.
+6. NEVER manually type "<function=...>" tags in your text response. Use the tool calling API correctly.
 """
 
 # ----------------------------------------------------
@@ -67,6 +68,62 @@ tools = [
                 "required": ["app_name"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "play_spotify_music",
+            "description": "Searches Spotify for a specific song and instantly starts playing it. Use this whenever the user asks to play a song or music.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "song_name": {
+                        "type": "string",
+                        "description": "The exact name of the song and artist. DO NOT use the word 'by' or any conversational filler. Format strictly as 'SongName ArtistName'"
+                    }
+                },
+                "required": ["song_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "control_spotify",
+            "description": "Controls the currently playing music on Spotify. Can pause, resume, skip tracks, go back, or change volume.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "enum": ["pause", "resume", "next", "previous", "volume"],
+                        "description": "The playback command to execute."
+                    },
+                    "volume_percent": {
+                        "type": "string",
+                        "description": "If command is 'volume', the desired volume percentage from 0 to 100 as a string (e.g. '50')."
+                    }
+                },
+                "required": ["command"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "change_system_volume",
+            "description": "Changes the main global Windows system volume of the PC. Use this when the user asks to change the laptop or PC volume, rather than just Spotify playback volume.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "volume_percent": {
+                        "type": "string",
+                        "description": "The desired volume percentage from 0 to 100 as a string (e.g. '100')."
+                    }
+                },
+                "required": ["volume_percent"]
+            }
+        }
     }
 ]
 
@@ -75,13 +132,43 @@ available_functions = {
     "get_current_time": ops.get_current_time,
     "take_screenshot": ops.take_screenshot,
     "get_weather": ops.get_weather,
-    "open_application": ops.open_application
+    "open_application": ops.open_application,
+    "play_spotify_music": ops.play_spotify_music,
+    "control_spotify": ops.control_spotify,
+    "change_system_volume": ops.change_system_volume
 }
 
 # We keep a rolling history so it remembers the conversation
 chat_history = [
     {"role": "system", "content": SYSTEM_PROMPT}
 ]
+
+def safe_chat_completion(messages, tools_list=None, tool_choice_val=None):
+    """A hybrid router that falls back to Llama 4 Scout if the 70B model exhausts its daily tokens."""
+    primary_model = "llama-3.3-70b-versatile"
+    fallback_model = "meta-llama/llama-4-scout-17b-16e-instruct"
+    
+    kwargs = {
+        "model": primary_model,
+        "messages": messages,
+        "max_tokens": 2048
+    }
+    
+    if tools_list:
+        kwargs["tools"] = tools_list
+        kwargs["tool_choice"] = tool_choice_val
+        kwargs["parallel_tool_calls"] = False
+        
+    try:
+        return client.chat.completions.create(**kwargs)
+    except Exception as e:
+        error_str = str(e).lower()
+        if "429" in error_str or "rate limit" in error_str or "tokens per day" in error_str:
+            print("  [!] 70B Model Daily Token Limit Reached. Auto-swapping to Llama 4 Scout...")
+            kwargs["model"] = fallback_model
+            return client.chat.completions.create(**kwargs)
+        else:
+            raise e
 
 def ask_jarvis(user_input):
     global chat_history
@@ -91,13 +178,10 @@ def ask_jarvis(user_input):
     
     try:
         # 1. Ask the AI if it wants to use a tool or just reply directly
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+        response = safe_chat_completion(
             messages=chat_history,
-            tools=tools,
-            tool_choice="auto",
-            parallel_tool_calls=False,
-            max_tokens=2048
+            tools_list=tools,
+            tool_choice_val="auto"
         )
         
         response_message = response.choices[0].message
@@ -136,12 +220,13 @@ def ask_jarvis(user_input):
                     })
                 
             # 4. Have the LLM read the outputs and form a final conversational reply
-            final_response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=chat_history
-            )
+            final_response = safe_chat_completion(messages=chat_history)
             
+            import re
             final_text = final_response.choices[0].message.content
+            # Hotfix: Forcefully delete any hallucinated JSON tags that Groq leaks out (with DOTALL to catch newlines)
+            final_text = re.sub(r'<function=.*?</function>', '', final_text, flags=re.DOTALL).strip()
+            
             # Save strictly as a dict for standard appending
             chat_history.append({"role": "assistant", "content": final_text})
             return final_text
