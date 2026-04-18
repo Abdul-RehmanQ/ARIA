@@ -1,0 +1,8 @@
+groq
+google-generativeai
+cohere
+azure-cognitiveservices-speech
+python-dotenv
+SpeechRecognition
+pyaudio
+requests
