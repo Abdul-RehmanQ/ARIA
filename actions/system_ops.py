@@ -66,55 +66,80 @@ def open_application(app_name):
     except Exception as e:
         return f"Error opening application {app_name}: {e}"
 
-def play_spotify_music(song_name):
-    """Searches for a song on Spotify and directly plays it via Spotipy."""
+def play_spotify_media(query, media_type="track"):
+    """Searches for and plays a track, album, playlist, or liked songs."""
     try:
         import spotipy
         from spotipy.oauth2 import SpotifyOAuth
         
-        # Explicitly passing the custom .env variables to the auth manager
+        # Added user-library-read scope to access Liked Songs
         auth_manager = SpotifyOAuth(
             client_id=os.getenv("SPOTIFY_CLIENT_ID"),
             client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
             redirect_uri=os.getenv("SPOTIPY_REDIRECT_URI"),
-            scope="user-modify-playback-state user-read-playback-state",
-            open_browser=True # Opens default browser for 1-time auth
+            scope="user-modify-playback-state user-read-playback-state user-library-read",
+            open_browser=True 
         )
         sp = spotipy.Spotify(auth_manager=auth_manager)
         
-        # Explicitly fetch the first available device
         devices = sp.devices()
         device_id = None
         if devices and devices.get('devices'):
             device_id = devices['devices'][0]['id']
-            # Prioritize an active device if one exists
             for d in devices['devices']:
                 if d['is_active']:
                     device_id = d['id']
                     break
                     
         if not device_id:
-            return "No available Spotify device found. Please physically open your Spotify App and click play on any song once to wake it up."
+            return "No available Spotify device found. Please manually open your Spotify App and click play on any song once to wake it up."
         
-        # Spotify API struggles with conversational filler words like "by", so we strip them out
-        query = song_name.replace(" by ", " ").replace("play ", "").strip()
-        results = sp.search(q=query, limit=1, type='track')
-        if not results['tracks']['items']:
-            return f"Could not find any song matching '{query}'."
+        media_type = media_type.lower()
+        query_clean = query.replace(" by ", " ").replace("play ", "").strip()
+
+        if media_type == "liked_songs":
+            # Fetch user's saved tracks
+            results = sp.current_user_saved_tracks(limit=50)
+            if not results['items']:
+                return "You don't have any Liked Songs saved in your Spotify library."
+            uris = [item['track']['uri'] for item in results['items']]
             
-        track = results['tracks']['items'][0]
-        track_uri = track['uri']
-        track_name = track['name']
-        artist_name = track['artists'][0]['name']
-        
-        # Start playback directly targeting that device
-        try:
-            sp.start_playback(device_id=device_id, uris=[track_uri])
-            return f"I am now playing '{track_name}' by {artist_name} on your Spotify."
-        except spotipy.exceptions.SpotifyException as e:
-            if "PREMIUM_REQUIRED" in str(e):
-                return "Spotify Error: You must have a Spotify Premium account to control playback via Jarvis."
-            return "Spotify API error: The device is asleep. Please manually open the Spotify Desktop app and play a song to securely connect it."
+            try:
+                sp.start_playback(device_id=device_id, uris=uris)
+                return "I am now playing your Liked Songs."
+            except Exception as e:
+                return f"Error starting Liked Songs: {e}"
+            
+        elif media_type in ["album", "playlist"]:
+            results = sp.search(q=query_clean, limit=1, type=media_type)
+            items = results[media_type + 's']['items']
+            if not items:
+                return f"Could not find any {media_type} matching '{query}'."
+            context_uri = items[0]['uri']
+            name = items[0]['name']
+            
+            try:
+                sp.start_playback(device_id=device_id, context_uri=context_uri)
+                return f"I am now playing the {media_type} '{name}'."
+            except Exception as e:
+                return f"Error playing {media_type}: {e}"
+            
+        else: # "track"
+            results = sp.search(q=query_clean, limit=1, type='track')
+            if not results['tracks']['items']:
+                return f"Could not find any song matching '{query}'."
+            track = results['tracks']['items'][0]
+            track_uri = track['uri']
+            track_name = track['name']
+            artist_name = track['artists'][0]['name']
+            
+            try:
+                sp.start_playback(device_id=device_id, uris=[track_uri])
+                return f"I am now playing '{track_name}' by {artist_name}."
+            except spotipy.exceptions.SpotifyException as e:
+                if "PREMIUM_REQUIRED" in str(e):
+                    return "Spotify Error: You must have a Spotify Premium account to control playback."
+                return f"Spotify API error: {e}"
             
     except Exception as e:
         return f"Error interacting with Spotify: {e}"

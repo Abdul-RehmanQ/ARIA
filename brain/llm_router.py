@@ -72,17 +72,22 @@ tools = [
     {
         "type": "function",
         "function": {
-            "name": "play_spotify_music",
-            "description": "Searches Spotify for a specific song and instantly starts playing it. Use this whenever the user asks to play a song or music.",
+            "name": "play_spotify_media",
+            "description": "Plays music on Spotify. Can play a specific track, an album, a public playlist, or the user's personal 'Liked Songs'.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "song_name": {
+                    "query": {
                         "type": "string",
-                        "description": "The exact name of the song and artist. DO NOT use the word 'by' or any conversational filler. Format strictly as 'SongName ArtistName'"
+                        "description": "The name of the song, album, or playlist. If playing liked songs, just pass 'liked songs'."
+                    },
+                    "media_type": {
+                        "type": "string",
+                        "enum": ["track", "album", "playlist", "liked_songs"],
+                        "description": "The type of media to play."
                     }
                 },
-                "required": ["song_name"]
+                "required": ["query", "media_type"]
             }
         }
     },
@@ -133,7 +138,7 @@ available_functions = {
     "take_screenshot": ops.take_screenshot,
     "get_weather": ops.get_weather,
     "open_application": ops.open_application,
-    "play_spotify_music": ops.play_spotify_music,
+    "play_spotify_media": ops.play_spotify_media,
     "control_spotify": ops.control_spotify,
     "change_system_volume": ops.change_system_volume
 }
