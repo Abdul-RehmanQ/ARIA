@@ -5,16 +5,22 @@ import actions.system_ops as ops
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-SYSTEM_PROMPT = """You are Jarvis, a highly intelligent and professional AI assistant. 
+USERNAME = os.getlogin()
+HOME_DIR = os.path.expanduser("~")
+DESKTOP_DIR = os.path.join(HOME_DIR, "Desktop")
+
+SYSTEM_PROMPT = f"""You are Jarvis, a highly intelligent and professional AI assistant. 
 You are currently providing verbal responses directly to the user's audio speakers.
 
 CRITICAL RULES:
 1. KEEP YOUR RESPONSES EXTREMELY SHORT AND CONCISE. (1 to 3 sentences maximum).
-2. DO NOT output markdown, bullet points, asterisks, emojis, or code blocks. Audio systems cannot read markdown. Use perfectly natural plain English.
+2. DO NOT use markdown symbols like asterisks (*) or hashes (#) because the Text-to-Speech audio engine will literally read them out loud. However, you MAY use newlines/line breaks to format lists cleanly on the screen.
 3. Be polite, direct, and slightly formal but friendly.
-4. You have access to tools. If the user asks you to do something that a tool can do, USE THE TOOL.
-5. Provide a short verbal response alongside your tool calls to acknowledge the action being taken.
-6. NEVER manually type "<function=...>" tags in your text response. Use the tool calling API correctly.
+
+SYSTEM INFO:
+- The user's Windows Username is: {USERNAME}
+- The user's Home Directory is: {HOME_DIR}
+- The user's Desktop path is: {DESKTOP_DIR}
 """
 
 # ----------------------------------------------------
@@ -129,6 +135,61 @@ tools = [
                 "required": ["volume_percent"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_directory",
+            "description": "Lists all folders and files inside a specific directory on the PC's hard drive.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "The absolute Windows path of the folder to look inside (e.g., 'C:\\' or 'D:\\Projects'). Always use absolute paths."
+                    }
+                },
+                "required": ["path"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "read_file",
+            "description": "Reads the text contents of a specific file on the PC.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "The absolute Windows path to the text file you want to read."
+                    }
+                },
+                "required": ["path"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_file",
+            "description": "Creates a new text file or overwrites an existing one anywhere on the PC.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "The absolute Windows path where the file should be created (e.g., 'D:\\Notes\\hello.txt')."
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "The exact text content to write inside the file."
+                    }
+                },
+                "required": ["path", "content"]
+            }
+        }
     }
 ]
 
@@ -140,7 +201,10 @@ available_functions = {
     "open_application": ops.open_application,
     "play_spotify_media": ops.play_spotify_media,
     "control_spotify": ops.control_spotify,
-    "change_system_volume": ops.change_system_volume
+    "change_system_volume": ops.change_system_volume,
+    "list_directory": ops.list_directory,
+    "read_file": ops.read_file,
+    "create_file": ops.create_file
 }
 
 # We keep a rolling history so it remembers the conversation
@@ -162,7 +226,7 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None):
     if tools_list:
         kwargs["tools"] = tools_list
         kwargs["tool_choice"] = tool_choice_val
-        kwargs["parallel_tool_calls"] = False
+        kwargs["parallel_tool_calls"] = True
         
     try:
         return client.chat.completions.create(**kwargs)

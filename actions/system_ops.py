@@ -214,6 +214,67 @@ def change_system_volume(volume_percent):
         for _ in range(target_steps):
             keyboard.send("volume up")
             
-        return f"Windows system volume successfully set to {safe_volume}%."
+        return f"Windows system volume successfully set to {volume_percent}%."
     except Exception as e:
         return f"Error changing system volume: {e}"
+
+def list_directory(path):
+    """Lists the contents of a specified directory on the computer."""
+    try:
+        if not os.path.exists(path):
+            return f"Error: The path '{path}' does not exist."
+        if not os.path.isdir(path):
+            return f"Error: '{path}' is a file, not a directory."
+            
+        items = os.listdir(path)
+        if not items:
+            return f"The directory '{path}' is empty."
+            
+        folders = []
+        files = []
+        for item in items:
+            full_path = os.path.join(path, item)
+            if os.path.isdir(full_path):
+                folders.append(f"[Folder] {item}")
+            else:
+                files.append(f"[File] {item}")
+                
+        result = f"Contents of {path}:\n"
+        result += "\n".join(folders + files)
+        return result
+    except Exception as e:
+        return f"Error reading directory {path}: {e}"
+
+def read_file(path):
+    """Reads the text contents of a file."""
+    try:
+        if not os.path.exists(path):
+            return f"Error: The file '{path}' does not exist."
+        if not os.path.isfile(path):
+            return f"Error: '{path}' is a directory, not a file."
+            
+        with open(path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        # To prevent overwhelming the LLM context limit, we cap reading to first 5000 chars
+        if len(content) > 5000:
+            return f"File contents (Truncated to 5000 characters):\n{content[:5000]}...\n[End of truncated read]"
+        return f"File contents:\n{content}"
+    except UnicodeDecodeError:
+        return f"Error: '{path}' appears to be a binary or non-text file, which I cannot read."
+    except Exception as e:
+        return f"Error reading file {path}: {e}"
+
+def create_file(path, content):
+    """Creates a new file or overwrites an existing one with text content."""
+    try:
+        # Ensure the parent directory exists
+        directory = os.path.dirname(path)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+        
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        return f"Successfully created file at '{path}'."
+    except Exception as e:
+        return f"Error writing file to {path}: {e}"
