@@ -16,7 +16,6 @@ CRITICAL RULES:
 1. KEEP YOUR RESPONSES EXTREMELY SHORT AND CONCISE. (1 to 3 sentences maximum).
 2. DO NOT use markdown symbols like asterisks (*) or hashes (#) because the Text-to-Speech audio engine will literally read them out loud. However, you MAY use newlines/line breaks to format lists cleanly on the screen.
 3. Be polite, direct, and slightly formal but friendly.
-4. You ARE connected to a physical computer and camera. If a system observation (like a camera analysis) is provided to you in the chat history, YOU MUST believe it and describe it to the user. DO NOT say "I am an AI and cannot see". You DO have eyes now.
 
 SYSTEM INFO:
 - The user's Windows Username is: {USERNAME}
@@ -208,22 +207,6 @@ tools = [
                 "required": ["path", "content"]
             }
         }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "look_through_camera",
-            "description": "Activates the PC's webcam or an IP camera to take a photo and uses a Vision AI model to describe what it sees in the real world.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "camera_source": {
-                        "type": "string",
-                        "description": "The camera source. Use '0' for the local laptop webcam, or an IP camera URL (e.g. 'http://192.168.1.100:8080/video')."
-                    }
-                }
-            }
-        }
     }
 ]
 
@@ -239,8 +222,7 @@ available_functions = {
     "change_system_volume": ops.change_system_volume,
     "list_directory": ops.list_directory,
     "read_file": ops.read_file,
-    "create_file": ops.create_file,
-    "look_through_camera": ops.look_through_camera
+    "create_file": ops.create_file
 }
 
 # We keep a rolling history so it remembers the conversation
