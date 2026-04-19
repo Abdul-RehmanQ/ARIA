@@ -66,6 +66,30 @@ def open_application(app_name):
     except Exception as e:
         return f"Error opening application {app_name}: {e}"
 
+def close_application(app_name):
+    """Attempts to forcefully close a running application in Windows."""
+    app_name = app_name.lower().strip()
+    try:
+        if "spotify" in app_name:
+            os.system("taskkill /F /IM Spotify.exe /T")
+            return "Successfully closed Spotify."
+        elif "chrome" in app_name or "browser" in app_name:
+            os.system("taskkill /F /IM chrome.exe /T")
+            return "Successfully closed Google Chrome."
+        elif "notepad" in app_name:
+            os.system("taskkill /F /IM notepad.exe /T")
+            return "Successfully closed Notepad."
+        elif "calc" in app_name:
+            os.system("taskkill /F /IM CalculatorApp.exe /T")
+            return "Successfully closed Calculator."
+        else:
+            # Fallback
+            os.system(f"taskkill /F /IM {app_name}.exe /T")
+            return f"I have asked Windows to forcefully close {app_name}."
+            
+    except Exception as e:
+        return f"Error closing application {app_name}: {e}"
+
 def play_spotify_media(query, media_type="track"):
     """Searches for and plays a track, album, playlist, or liked songs."""
     try:
@@ -278,3 +302,73 @@ def create_file(path, content):
         return f"Successfully created file at '{path}'."
     except Exception as e:
         return f"Error writing file to {path}: {e}"
+
+def look_through_camera(camera_source="0"):
+    """Activates the webcam or an IP camera, captures a photo, and uses Groq Vision to describe the real world."""
+    try:
+        import cv2
+        import base64
+        import os
+        from groq import Groq
+        
+        # If the LLM tries to use the default '0', but you have an IP camera set in .env, override it!
+        if str(camera_source) == "0" and os.getenv("IP_CAMERA_URL"):
+            camera_source = os.getenv("IP_CAMERA_URL")
+            
+        # Determine if it's a local camera index (0) or an IP camera URL
+        if str(camera_source).isdigit():
+            source = int(camera_source)
+        else:
+            source = str(camera_source)
+            
+        # 1. Capture Image from Webcam or IP stream
+        cap = cv2.VideoCapture(source)
+        if not cap.isOpened():
+            return f"Error: Could not access the camera at '{source}'. Ensure it is connected and reachable."
+            
+        # Read a few frames to let the camera sensor adjust to the lighting
+        for _ in range(5):
+            cap.read()
+            
+        ret, frame = cap.read()
+        cap.release()
+        
+        if not ret:
+            return "Error: Failed to capture an image from the camera."
+            
+        # CRITICAL FIX: High-res laptop cameras generate base64 strings that are too massive for Groq's API payload limit.
+        # We must resize the image down to 512x512 and compress it before sending.
+        frame = cv2.resize(frame, (512, 512))
+        _, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+        base64_image = base64.b64encode(buffer).decode('utf-8')
+        
+        # 3. Send image to Groq's dedicated Multimodal Vision Model
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        
+        response = client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text", 
+                            "text": "You are the 'eyes' of an AI assistant named Jarvis. Describe exactly what you see in this webcam photo in 2 to 3 concise sentences so the main AI brain can understand the user's physical environment."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=1024
+        )
+        
+        vision_text = response.choices[0].message.content
+        return f"Camera analysis: {vision_text}"
+        
+    except Exception as e:
+        return f"Error using camera vision: {e}"

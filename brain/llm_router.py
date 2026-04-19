@@ -16,6 +16,7 @@ CRITICAL RULES:
 1. KEEP YOUR RESPONSES EXTREMELY SHORT AND CONCISE. (1 to 3 sentences maximum).
 2. DO NOT use markdown symbols like asterisks (*) or hashes (#) because the Text-to-Speech audio engine will literally read them out loud. However, you MAY use newlines/line breaks to format lists cleanly on the screen.
 3. Be polite, direct, and slightly formal but friendly.
+4. You ARE connected to a physical computer and camera. If a system observation (like a camera analysis) is provided to you in the chat history, YOU MUST believe it and describe it to the user. DO NOT say "I am an AI and cannot see". You DO have eyes now.
 
 SYSTEM INFO:
 - The user's Windows Username is: {USERNAME}
@@ -69,6 +70,23 @@ tools = [
                     "app_name": {
                         "type": "string",
                         "description": "The name of the application to open, e.g. chrome, notepad, spotify, youtube"
+                    }
+                },
+                "required": ["app_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "close_application",
+            "description": "Forcefully closes or quits a native Windows application.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "app_name": {
+                        "type": "string",
+                        "description": "The name of the application to close, e.g. chrome, notepad, spotify"
                     }
                 },
                 "required": ["app_name"]
@@ -190,6 +208,22 @@ tools = [
                 "required": ["path", "content"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "look_through_camera",
+            "description": "Activates the PC's webcam or an IP camera to take a photo and uses a Vision AI model to describe what it sees in the real world.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "camera_source": {
+                        "type": "string",
+                        "description": "The camera source. Use '0' for the local laptop webcam, or an IP camera URL (e.g. 'http://192.168.1.100:8080/video')."
+                    }
+                }
+            }
+        }
     }
 ]
 
@@ -199,12 +233,14 @@ available_functions = {
     "take_screenshot": ops.take_screenshot,
     "get_weather": ops.get_weather,
     "open_application": ops.open_application,
+    "close_application": ops.close_application,
     "play_spotify_media": ops.play_spotify_media,
     "control_spotify": ops.control_spotify,
     "change_system_volume": ops.change_system_volume,
     "list_directory": ops.list_directory,
     "read_file": ops.read_file,
-    "create_file": ops.create_file
+    "create_file": ops.create_file,
+    "look_through_camera": ops.look_through_camera
 }
 
 # We keep a rolling history so it remembers the conversation
@@ -279,6 +315,7 @@ def ask_jarvis(user_input):
                     
                     # Physically execute the python function on the PC!
                     function_response = function_to_call(**function_args)
+                    print(f"  [🔧 Tool Output: {str(function_response)[:200]}...]")
                     
                     # 3. Tell the AI the result of the physical action
                     chat_history.append({
