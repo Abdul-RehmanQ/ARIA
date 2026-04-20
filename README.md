@@ -1,6 +1,6 @@
-# Jarvis AI Assistant: System Documentation
+# ARIA AI Assistant: System Documentation
 
-This document serves as a complete technical reference for the Jarvis AI Assistant project. It outlines the system architecture, the purpose of each module, and a detailed breakdown of every tool (function) currently available to the AI. 
+This document serves as a complete technical reference for the ARIA AI Assistant project. It outlines the system architecture, the purpose of each module, and a detailed breakdown of every tool (function) currently available to the AI. 
 
 You can provide this document to any LLM (like ChatGPT, Claude, or Llama) as context so it immediately understands the entire codebase and can help you make modifications or add new features safely.
 
@@ -31,7 +31,7 @@ The Brain uses advanced Agentic AI techniques to function autonomously:
 
 ## 3. The "Hands": Tool Catalog (`actions/system_ops.py`)
 
-Here is every active function Jarvis is capable of executing, and how it works under the hood:
+Here is every active function ARIA is capable of executing, and how it works under the hood:
 
 ### 🌍 Real-Time Information
 * **`get_current_time()`**: Uses Python's native `datetime` module to return the exact current day, date, and time.
@@ -52,7 +52,7 @@ Here is every active function Jarvis is capable of executing, and how it works u
 * **`control_spotify(command, volume_percent)`**: Acts as a remote control for the currently playing active device. Maps string commands to `sp.pause_playback()`, `sp.start_playback()`, `sp.next_track()`, `sp.previous_track()`, and `sp.volume()`.
 
 ### 📂 File System Operations
-*Safety Note: Jarvis forces the use of Absolute Paths and has no native delete function.*
+*Safety Note: ARIA forces the use of Absolute Paths and has no native delete function.*
 * **`list_directory(path)`**: Uses `os.listdir()` and `os.path.isdir()` to return a clean, newline-formatted list of all folders and files inside a specified Windows directory.
 * **`read_file(path)`**: Uses Python's `open(path, 'r')` to read text. Includes a 5,000-character truncation limit to prevent massive files from overloading the LLM's token memory.
 * **`create_file(path, content)`**: Uses `os.makedirs()` to ensure the directory exists, then `open(path, 'w')` to write or overwrite a text file anywhere on the PC.
@@ -69,7 +69,7 @@ The system relies on the following API keys securely stored in a `.env` file:
 
 ## 5. Post-Mortem: Computer Vision ("The Eyes")
 
-During development, Jarvis was briefly equipped with Real-World Computer Vision. This feature allowed him to view the user's laptop camera or an external IP Mobile Camera and describe the physical environment. However, the feature was completely ripped out of the codebase. This section serves as historical context for future developers or LLMs attempting to rebuild it.
+During development, ARIA was briefly equipped with Real-World Computer Vision. This feature allowed him to view the user's laptop camera or an external IP Mobile Camera and describe the physical environment. However, the feature was completely ripped out of the codebase. This section serves as historical context for future developers or LLMs attempting to rebuild it.
 
 ### **The Implementation**
 - Two tools were created in `system_ops.py`: `look_through_camera()` (single snapshot) and `start_continuous_vision()` (a background thread updating every 7 seconds).
@@ -79,8 +79,8 @@ During development, Jarvis was briefly equipped with Real-World Computer Vision.
 ### **The Technical Hurdles & Errors**
 1. **API Rate Limiting (The 429 Error):** Sending raw images to an LLM uses thousands of tokens per frame. The continuous vision loop exhausted Groq API daily token limits within minutes, constantly crashing the primary Llama 3 70B text model and forcing the system onto smaller backup models.
 2. **Audio Overlap (The "Two Voices" Bug):** Because the continuous vision loop ran on an asynchronous Python `threading.Thread`, it would trigger the Azure TTS engine to speak updates exactly while the main thread was also trying to speak. The Azure TTS Python SDK `speak_text_async().get()` did not block until the audio physically finished playing from the speakers. This was temporarily fixed using `pyaudio` to manually push raw WAV bytes sequentially under a strict `threading.Lock()`.
-3. **OpenCV Background Threading Freezes:** OpenCV's GUI functions (`cv2.imshow` and `cv2.waitKey`) are notoriously unsafe to run on background threads in Windows. Because Jarvis's main thread was permanently blocked waiting for `keyboard.wait('space')`, the OpenCV window on the secondary thread starved for UI event pumping. This caused the live video feed to lag heavily and ultimately hard-froze the entire Python process, ignoring `Ctrl+C` entirely.
+3. **OpenCV Background Threading Freezes:** OpenCV's GUI functions (`cv2.imshow` and `cv2.waitKey`) are notoriously unsafe to run on background threads in Windows. Because ARIA's main thread was permanently blocked waiting for `keyboard.wait('space')`, the OpenCV window on the secondary thread starved for UI event pumping. This caused the live video feed to lag heavily and ultimately hard-froze the entire Python process, ignoring `Ctrl+C` entirely.
 4. **IP Camera Network Buffering:** Streaming from a mobile IP camera caused massive latency because OpenCV defaults to buffering old frames in the background. This was mitigated by strictly enforcing `cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)`.
 
 ### **The Conclusion**
-The Computer Vision architecture fundamentally conflicted with Jarvis's goal of being a lightning-fast, highly responsive OS assistant. The heavy `cv2` dependencies, continuous network streaming, and exponential token usage caused immense friction. All code related to vision, threaded background loops, and camera access was completely erased from the codebase to optimize speed and strictly preserve API limits for core functionality (like Desktop Automation and RAG memory integration).
+The Computer Vision architecture fundamentally conflicted with ARIA's goal of being a lightning-fast, highly responsive OS assistant. The heavy `cv2` dependencies, continuous network streaming, and exponential token usage caused immense friction. All code related to vision, threaded background loops, and camera access was completely erased from the codebase to optimize speed and strictly preserve API limits for core functionality (like Desktop Automation and RAG memory integration).
