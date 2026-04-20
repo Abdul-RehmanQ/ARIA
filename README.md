@@ -1,4 +1,4 @@
-# ARIA AI Assistant: System Documentation
+# ARIA (Adaptive Real-time Intelligence Assistant): System Documentation
 
 This document serves as a complete technical reference for the ARIA AI Assistant project. It outlines the system architecture, the purpose of each module, and a detailed breakdown of every tool (function) currently available to the AI. 
 
