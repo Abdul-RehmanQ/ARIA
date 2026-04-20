@@ -231,12 +231,17 @@ chat_history = [
 ]
 
 def safe_chat_completion(messages, tools_list=None, tool_choice_val=None):
-    """A hybrid router that falls back to Llama 4 Scout if the 70B model exhausts its daily tokens."""
-    primary_model = "llama-3.3-70b-versatile"
-    fallback_model = "meta-llama/llama-4-scout-17b-16e-instruct"
+    """A hybrid router that cascades through multiple models if rate limits are hit."""
+    # List of available Groq models in order of preference and intelligence
+    models = [
+        "llama-3.3-70b-versatile",
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "llama-3.1-8b-instant",
+        "mixtral-8x7b-32768",
+        "gemma2-9b-it"
+    ]
     
     kwargs = {
-        "model": primary_model,
         "messages": messages,
         "max_tokens": 2048
     }
@@ -246,16 +251,21 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None):
         kwargs["tool_choice"] = tool_choice_val
         kwargs["parallel_tool_calls"] = True
         
-    try:
-        return client.chat.completions.create(**kwargs)
-    except Exception as e:
-        error_str = str(e).lower()
-        if "429" in error_str or "rate limit" in error_str or "tokens per day" in error_str:
-            print("  [!] 70B Model Daily Token Limit Reached. Auto-swapping to Llama 4 Scout...")
-            kwargs["model"] = fallback_model
+    for model in models:
+        kwargs["model"] = model
+        try:
             return client.chat.completions.create(**kwargs)
-        else:
-            raise e
+        except Exception as e:
+            error_str = str(e).lower()
+            if "429" in error_str or "rate limit" in error_str or "tokens per day" in error_str or "tokens per minute" in error_str:
+                print(f"  [!] Model '{model}' Rate Limit Reached. Swapping...")
+                continue
+            else:
+                # If it's a different error (like invalid schema), throw it so we know
+                raise e
+                
+    # If we loop through ALL models and they all fail:
+    raise Exception("Critical: ALL Groq models have exhausted their rate limits. Please wait a few minutes for tokens to refill.")
 
 def ask_jarvis(user_input):
     global chat_history
