@@ -6,17 +6,17 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 from audio.stt import listen_and_transcribe
 from audio.tts import speak
-from brain.llm_router import ask_jarvis
+from brain.llm_router import ask_aria
 
 def main():
     print("\n" + "="*60)
-    print("                      JARVIS IS ONLINE")
+    print("                       ARIA IS ONLINE")
     print("="*60)
     
     greeting = "Systems initialized. I am online and ready, sir."
-    print(f"Jarvis: {greeting}")
+    print(f"ARIA: {greeting}")
     speak(greeting)
-    print("\n(To safely quit Jarvis, press Ctrl+C in this terminal)")
+    print("\n(To safely quit ARIA, press Ctrl+C in this terminal)")
     
     while True:
         try:
@@ -29,15 +29,15 @@ def main():
             print(f"\nYou: {user_text}")
             
             # Send the transcribed text strictly to the Llama 3 Brain
-            response = ask_jarvis(user_text)
+            response = ask_aria(user_text)
             
-            print(f"Jarvis: {response}\n")
+            print(f"ARIA: {response}\n")
             
             # Output the text as audio
             speak(response)
             
         except KeyboardInterrupt:
-            print("\nShutting down Jarvis...")
+            print("\nShutting down ARIA...")
             speak("Shutting down protocols. Goodbye for now.")
             break
         except Exception as e:

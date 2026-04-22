@@ -32,7 +32,7 @@ def take_screenshot():
         filename = f"screenshot_{int(datetime.datetime.now().timestamp())}.png"
         screenshot = ImageGrab.grab()
         screenshot.save(filename)
-        return f"Screenshot successfully saved to your Jarvis project folder as {filename}."
+        return f"Screenshot successfully saved to your ARIA project folder as {filename}."
         
     except ImportError:
         return "I am missing the 'Pillow' image processing library. Please run: pip install Pillow"

@@ -12,7 +12,7 @@ import azure.cognitiveservices.speech as speechsdk
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 def run_validation():
-    print("=== JARVIS API AUTHENTICATION VALIDATION ===")
+    print("=== ARIA API AUTHENTICATION VALIDATION ===")
     all_passed = True
     
     # 1. Google Gemini
@@ -72,7 +72,7 @@ def run_validation():
 
     print("\n=============================================")
     if all_passed:
-        print("[SUCCESS] ALL APIs ARE WORKING AND READY FOR JARVIS!")
+        print("[SUCCESS] ALL APIs ARE WORKING AND READY FOR ARIA!")
     else:
         print("[WARNING] SOME APIs FAILED. PLEASE CHECK THE ERRORS ABOVE.")
 

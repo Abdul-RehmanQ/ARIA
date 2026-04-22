@@ -33,7 +33,7 @@ def test_speakers():
     audio_config = speechsdk.audio.AudioOutputConfig(use_default_speaker=True)
     synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
     
-    text = f"Hello Jarvis framework! I am currently using the Azure voice named {voice_name}. If you can hear me, your speakers are working perfectly."
+    text = f"Hello ARIA framework! I am currently using the Azure voice named {voice_name}. If you can hear me, your speakers are working perfectly."
     print(f"Synthesizing Voice: {voice_name}")
     print(f"Text: '{text}'\n")
     
@@ -48,7 +48,7 @@ def test_speakers():
             print(f"Error details: {cancellation_details}")
 
 if __name__ == "__main__":
-    print("Welcome to the Jarvis Audio Setup.")
+    print("Welcome to the ARIA Audio Setup.")
     test_microphone()
     time.sleep(1)
     test_speakers()

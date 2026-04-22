@@ -9,7 +9,7 @@ USERNAME = os.getlogin()
 HOME_DIR = os.path.expanduser("~")
 DESKTOP_DIR = os.path.join(HOME_DIR, "Desktop")
 
-SYSTEM_PROMPT = f"""You are Jarvis, a highly intelligent and professional AI assistant. 
+SYSTEM_PROMPT = f"""You are ARIA, a highly intelligent and professional AI assistant. 
 You are currently providing verbal responses directly to the user's audio speakers.
 
 CRITICAL RULES:
@@ -267,7 +267,7 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None):
     # If we loop through ALL models and they all fail:
     raise Exception("Critical: ALL Groq models have exhausted their rate limits. Please wait a few minutes for tokens to refill.")
 
-def ask_jarvis(user_input):
+def ask_aria(user_input, update_callback=None):
     global chat_history
     
     # Append the user's message
@@ -287,6 +287,9 @@ def ask_jarvis(user_input):
         if response_message.tool_calls:
             # We must append the AI's tool request to history first
             chat_history.append(response_message)
+
+            executed_tool_outputs = []
+            seen_tool_invocations = set()
             
             # We process each tool call (it might try to do multiple things at once)
             for tool_call in response_message.tool_calls:
@@ -302,6 +305,25 @@ def ask_jarvis(user_input):
                             function_args = {}
                     except:
                         function_args = {}
+
+                    try:
+                        invocation_key = (
+                            function_name,
+                            json.dumps(function_args, sort_keys=True)
+                        )
+                    except Exception:
+                        invocation_key = (function_name, str(function_args))
+
+                    if invocation_key in seen_tool_invocations:
+                        continue
+                    seen_tool_invocations.add(invocation_key)
+
+                    if update_callback:
+                        try:
+                            update_callback(f"Executing: {function_name}...")
+                        except Exception:
+                            # Keep local execution resilient even if external listeners fail.
+                            pass
                         
                     print(f"  [⚡ Executing System Tool: {function_name}({function_args})]")
                     
@@ -316,9 +338,25 @@ def ask_jarvis(user_input):
                         "name": function_name,
                         "content": str(function_response),
                     })
+                    executed_tool_outputs.append({
+                        "name": function_name,
+                        "content": str(function_response),
+                    })
                 
             # 4. Have the LLM read the outputs and form a final conversational reply
-            final_response = safe_chat_completion(messages=chat_history)
+            synthesis_messages = chat_history
+            if executed_tool_outputs:
+                synthesis_messages = chat_history + [{
+                    "role": "system",
+                    "content": (
+                        "Use the tool outputs above as the source of truth. "
+                        "Do not claim that you lack real-time access, web access, or browsing access "
+                        "when tool outputs are present. Keep your answer concise and directly grounded "
+                        "in the latest relevant tool result."
+                    )
+                }]
+
+            final_response = safe_chat_completion(messages=synthesis_messages)
             
             import re
             final_text = final_response.choices[0].message.content
