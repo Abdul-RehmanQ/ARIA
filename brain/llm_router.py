@@ -1,9 +1,23 @@
 import os
 import json
+import traceback
+import logging
 from groq import Groq
 import actions.system_ops as ops
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+logger = logging.getLogger("ARIA.Brain")
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Groq client — validated at import time so we fail loudly, not silently.
+# ──────────────────────────────────────────────────────────────────────────────
+_groq_api_key = os.getenv("GROQ_API_KEY")
+if not _groq_api_key:
+    raise EnvironmentError(
+        "GROQ_API_KEY is not set in your .env file. "
+        "The LLM brain cannot function without it."
+    )
+
+client = Groq(api_key=_groq_api_key)
 
 USERNAME = os.getlogin()
 HOME_DIR = os.path.expanduser("~")
@@ -32,6 +46,11 @@ tools = [
         "function": {
             "name": "get_current_time",
             "description": "Returns the exact current date and time.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": False
+            }
         }
     },
     {
@@ -39,6 +58,11 @@ tools = [
         "function": {
             "name": "take_screenshot",
             "description": "Takes a screenshot of the user's monitor and saves it to their PC. Call this when they ask to take a screenshot or picture of the screen.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": False
+            }
         }
     },
     {
@@ -54,7 +78,8 @@ tools = [
                         "description": "The name of the city, e.g. New York, London, Islamabad"
                     }
                 },
-                "required": ["city_name"]
+                "required": ["city_name"],
+                "additionalProperties": False
             }
         }
     },
@@ -71,7 +96,8 @@ tools = [
                         "description": "The name of the application to open, e.g. chrome, notepad, spotify, youtube"
                     }
                 },
-                "required": ["app_name"]
+                "required": ["app_name"],
+                "additionalProperties": False
             }
         }
     },
@@ -88,7 +114,8 @@ tools = [
                         "description": "The name of the application to close, e.g. chrome, notepad, spotify"
                     }
                 },
-                "required": ["app_name"]
+                "required": ["app_name"],
+                "additionalProperties": False
             }
         }
     },
@@ -110,7 +137,8 @@ tools = [
                         "description": "The type of media to play."
                     }
                 },
-                "required": ["query", "media_type"]
+                "required": ["query", "media_type"],
+                "additionalProperties": False
             }
         }
     },
@@ -132,7 +160,8 @@ tools = [
                         "description": "If command is 'volume', the desired volume percentage from 0 to 100 as a string (e.g. '50')."
                     }
                 },
-                "required": ["command"]
+                "required": ["command"],
+                "additionalProperties": False
             }
         }
     },
@@ -149,7 +178,8 @@ tools = [
                         "description": "The desired volume percentage from 0 to 100 as a string (e.g. '100')."
                     }
                 },
-                "required": ["volume_percent"]
+                "required": ["volume_percent"],
+                "additionalProperties": False
             }
         }
     },
@@ -166,7 +196,8 @@ tools = [
                         "description": "The absolute Windows path of the folder to look inside (e.g., 'C:\\' or 'D:\\Projects'). Always use absolute paths."
                     }
                 },
-                "required": ["path"]
+                "required": ["path"],
+                "additionalProperties": False
             }
         }
     },
@@ -183,7 +214,8 @@ tools = [
                         "description": "The absolute Windows path to the text file you want to read."
                     }
                 },
-                "required": ["path"]
+                "required": ["path"],
+                "additionalProperties": False
             }
         }
     },
@@ -204,7 +236,8 @@ tools = [
                         "description": "The exact text content to write inside the file."
                     }
                 },
-                "required": ["path", "content"]
+                "required": ["path", "content"],
+                "additionalProperties": False
             }
         }
     }
@@ -249,7 +282,10 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None):
     if tools_list:
         kwargs["tools"] = tools_list
         kwargs["tool_choice"] = tool_choice_val
-        kwargs["parallel_tool_calls"] = True
+        # NOTE: parallel_tool_calls is intentionally omitted.
+        # Groq's llama-3.3-70b rejects it with a failed_generation error,
+        # which causes the entire request to fall back to text-only mode
+        # and ARIA just hallucinates the action instead of executing it.
         
     for model in models:
         kwargs["model"] = model
@@ -257,15 +293,45 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None):
             return client.chat.completions.create(**kwargs)
         except Exception as e:
             error_str = str(e).lower()
+
+            # ── Rate limit: swap to next model ───────────────────────────
             if "429" in error_str or "rate limit" in error_str or "tokens per day" in error_str or "tokens per minute" in error_str:
-                print(f"  [!] Model '{model}' Rate Limit Reached. Swapping...")
+                print(f"  [!] Model '{model}' Rate Limit Reached. Swapping to next model...")
+                logger.warning(f"Rate limit on model '{model}'. Trying next. Error: {e}")
                 continue
-            else:
-                # If it's a different error (like invalid schema), throw it so we know
-                raise e
-                
-    # If we loop through ALL models and they all fail:
-    raise Exception("Critical: ALL Groq models have exhausted their rate limits. Please wait a few minutes for tokens to refill.")
+
+            # ── Tool call rejected: skip to next model WITH tools still on ──────
+            # IMPORTANT: do NOT fall back to text-only here — that causes ARIA to
+            # hallucinate the action ("Spotify is opening!") without actually doing it.
+            if tools_list and ("tool_use_failed" in error_str or "failed_generation" in error_str):
+                print(f"  [!] Model '{model}' rejected a tool call. Trying next model...")
+                logger.warning(f"Tool call rejected by '{model}'. Skipping to next model. Error: {e}")
+                continue  # Try the next model in the list with tools still active
+
+            # ── Auth error: no point trying other models ──────────────────
+            if "401" in error_str or "authentication" in error_str or "invalid api key" in error_str:
+                logger.error(f"Groq API key is invalid or expired: {e}")
+                raise ConnectionError(
+                    "Your GROQ_API_KEY is invalid or expired. "
+                    "Please update it in your .env file."
+                ) from e
+
+            # ── Network error: no point trying other models ───────────────
+            if "connection" in error_str or "timeout" in error_str or "network" in error_str:
+                logger.error(f"Network error contacting Groq API: {e}")
+                raise ConnectionError(
+                    "Could not reach the Groq API. Please check your internet connection."
+                ) from e
+
+            # ── Anything else: surface it immediately ─────────────────────
+            logger.error(f"Groq API error on model '{model}': {e}\n{traceback.format_exc()}")
+            raise e
+
+    # All models exhausted their rate limits
+    raise Exception(
+        "Critical: ALL Groq models have exhausted their rate limits. "
+        "Please wait a few minutes for tokens to refill."
+    )
 
 def ask_aria(user_input, update_callback=None):
     global chat_history
@@ -326,12 +392,33 @@ def ask_aria(user_input, update_callback=None):
                             pass
                         
                     print(f"  [⚡ Executing System Tool: {function_name}({function_args})]")
-                    
-                    # Physically execute the python function on the PC!
-                    function_response = function_to_call(**function_args)
-                    print(f"  [🔧 Tool Output: {str(function_response)[:200]}...]")
-                    
-                    # 3. Tell the AI the result of the physical action
+
+                    # ── Execute the tool — isolated so one crash can't kill the whole response ──
+                    try:
+                        function_response = function_to_call(**function_args)
+                        print(f"  [✓ Tool Output: {str(function_response)[:200]}]")
+                    except TypeError as e:
+                        # Wrong arguments were passed — the LLM sent bad params
+                        logger.error(
+                            f"Tool '{function_name}' received invalid arguments {function_args}: {e}"
+                        )
+                        function_response = (
+                            f"Error: '{function_name}' was called with invalid arguments. "
+                            f"Details: {e}"
+                        )
+                        print(f"  [✗ Tool '{function_name}' argument error: {e}]")
+                    except Exception as e:
+                        logger.error(
+                            f"Tool '{function_name}' raised an exception: {e}\n"
+                            f"{traceback.format_exc()}"
+                        )
+                        function_response = (
+                            f"Error: The system action '{function_name}' failed. "
+                            f"Reason: {e}"
+                        )
+                        print(f"  [✗ Tool '{function_name}' failed: {e}]")
+
+                    # 3. Tell the AI the result (or error) of the physical action
                     chat_history.append({
                         "role": "tool",
                         "tool_call_id": tool_call.id,
@@ -373,6 +460,28 @@ def ask_aria(user_input, update_callback=None):
             chat_history.append({"role": "assistant", "content": reply_text})
             return reply_text
             
+    except ConnectionError as e:
+        # Network or auth errors — specific, actionable message
+        logger.error(f"Brain (LLM) Connection Error: {e}")
+        print(f"[-] Brain (LLM) Connection Error: {e}")
+        return "I'm unable to reach my cloud reasoning engine right now, sir. Please check your internet connection and API keys."
+
+    except MemoryError:
+        # Conversation history is too large — clear it and recover
+        logger.error("Brain (LLM) MemoryError: Conversation history too large. Resetting.")
+        print("[-] Brain (LLM) Memory Overflow: Conversation history was too large. Resetting memory.")
+        chat_history.clear()
+        chat_history.append({"role": "system", "content": SYSTEM_PROMPT})
+        return "My conversation memory has been reset due to overflow, sir. Please repeat your request."
+
     except Exception as e:
-        print(f"[-] Brain (LLM) Error: {e}")
-        return "I'm sorry, sir. I'm currently unable to process my system directives."
+        logger.error(f"Brain (LLM) unhandled error: {e}\n{traceback.format_exc()}")
+        print(f"[-] Brain (LLM) Error: {type(e).__name__}: {e}")
+        # If chat_history got corrupted during the error, trim the last bad entry
+        try:
+            if chat_history and chat_history[-1].get("role") == "user":
+                chat_history.pop()
+                logger.info("Brain: Removed corrupt/orphaned user message from history.")
+        except Exception:
+            pass
+        return "I'm sorry, sir. I encountered an internal error. Please try your request again."

@@ -49,7 +49,11 @@ def open_application(app_name):
         elif "spotify" in app_name:
             os.system("start spotify:")
             return "Successfully opened Spotify for you, sir."
-        elif "chrome" in app_name or "browser" in app_name:
+        elif "edge" in app_name or "msedge" in app_name:
+            # Use the registered URI scheme — works regardless of install path
+            os.system("start microsoft-edge:")
+            return "Successfully opened Microsoft Edge for you, sir."
+        elif "chrome" in app_name or ("browser" in app_name and "edge" not in app_name):
             os.system("start chrome")
             return "Successfully opened Google Chrome for you, sir."
         elif "notepad" in app_name:
@@ -58,11 +62,32 @@ def open_application(app_name):
         elif "calc" in app_name:
             os.system("start calc")
             return "Successfully opened Calculator for you, sir."
+        elif "code" in app_name or "vs code" in app_name or "vscode" in app_name:
+            os.system("start code")
+            return "Successfully opened Visual Studio Code for you, sir."
+        elif "explorer" in app_name or "file manager" in app_name or "files" in app_name:
+            os.system("start explorer")
+            return "Successfully opened File Explorer for you, sir."
+        elif "task manager" in app_name or "taskmgr" in app_name:
+            os.system("start taskmgr")
+            return "Successfully opened Task Manager for you, sir."
+        elif "word" in app_name:
+            os.system("start winword")
+            return "Successfully opened Microsoft Word for you, sir."
+        elif "excel" in app_name:
+            os.system("start excel")
+            return "Successfully opened Microsoft Excel for you, sir."
+        elif "powerpoint" in app_name or "ppt" in app_name:
+            os.system("start powerpnt")
+            return "Successfully opened Microsoft PowerPoint for you, sir."
+        elif "paint" in app_name:
+            os.system("start mspaint")
+            return "Successfully opened Paint for you, sir."
         else:
-            # Fallback
+            # Generic fallback — try the name as-is
             os.system(f"start {app_name}")
             return f"I have asked Windows to attempt to launch {app_name}."
-            
+
     except Exception as e:
         return f"Error opening application {app_name}: {e}"
 
