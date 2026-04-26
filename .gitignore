@@ -33,3 +33,5 @@ Thumbs.db
 # Misc
 *.log
 .cache
+
+aria_memory.json

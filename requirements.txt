@@ -15,3 +15,5 @@ comtypes==1.4.1
 requests
 discord.py 
 aiohttp
+
+agentscope

@@ -1,13 +1,28 @@
 import os
 import datetime
 import requests
+from agentscope.tool import Toolkit
 
+tools = Toolkit()
+
+def _action_decorator(description=None):
+    def decorator(func):
+        if description and not func.__doc__:
+            func.__doc__ = description
+        tools.register_tool_function(func)
+        return func
+    return decorator
+
+tools.action = _action_decorator
+
+@tools.action(description="Returns the exact current date and time.")
 def get_current_time():
     """Returns the current date and time in a human-readable format."""
     now = datetime.datetime.now()
     return now.strftime("Today is %A, %B %d, %Y, and the current time is %I:%M %p.")
 
-def get_weather(city_name="Islamabad"):
+@tools.action(description="Fetches the current weather for a specific city.")
+def get_weather(city_name: str = "Islamabad"):
     """Fetches the current weather for a specific city using a free, no-key public API."""
     try:
         # We use wttr.in because it requires zero API keys and is extremely fast
@@ -24,6 +39,7 @@ def get_weather(city_name="Islamabad"):
     except Exception as e:
         return f"Error fetching weather: {e}"
 
+@tools.action(description="Takes a screenshot of the user's monitor and saves it to their PC. Call this when they ask to take a screenshot or picture of the screen.")
 def take_screenshot():
     """Takes a screenshot of the main monitor and saves it to the project folder."""
     try:
@@ -39,7 +55,8 @@ def take_screenshot():
     except Exception as e:
         return f"Failed to take screenshot: {e}"
 
-def open_application(app_name):
+@tools.action(description="Opens a native Windows application or website. Example names: chrome, notepad, spotify, youtube")
+def open_application(app_name: str):
     """Attempts to launch a program or website natively via Windows."""
     app_name = app_name.lower().strip()
     try:
@@ -91,7 +108,8 @@ def open_application(app_name):
     except Exception as e:
         return f"Error opening application {app_name}: {e}"
 
-def close_application(app_name):
+@tools.action(description="Forcefully closes or quits a native Windows application. Example names: chrome, notepad, spotify")
+def close_application(app_name: str):
     """Attempts to forcefully close a running application in Windows."""
     app_name = app_name.lower().strip()
     try:
@@ -115,7 +133,8 @@ def close_application(app_name):
     except Exception as e:
         return f"Error closing application {app_name}: {e}"
 
-def play_spotify_media(query, media_type="track"):
+@tools.action(description="Plays music on Spotify. Can play a specific track, an album, a public playlist, or the user's personal 'Liked Songs'. Types: 'track', 'album', 'playlist', 'liked_songs'.")
+def play_spotify_media(query: str, media_type: str = "track"):
     """Searches for and plays a track, album, playlist, or liked songs."""
     try:
         import spotipy
@@ -193,7 +212,8 @@ def play_spotify_media(query, media_type="track"):
     except Exception as e:
         return f"Error interacting with Spotify: {e}"
 
-def control_spotify(command, volume_percent=None):
+@tools.action(description="Controls the currently playing music on Spotify. Commands: 'pause', 'resume', 'next', 'previous', 'volume'. If 'volume', pass volume_percent.")
+def control_spotify(command: str, volume_percent: int = None):
     """Controls Spotify playback (pause, resume, next, previous) and volume."""
     try:
         import spotipy
@@ -243,7 +263,8 @@ def control_spotify(command, volume_percent=None):
             return "Action processed, though it may already be in that state."
         return f"Error controlling Spotify: {e}"
 
-def change_system_volume(volume_percent):
+@tools.action(description="Changes the master volume of the entire Windows system to a given percentage (0-100).")
+def change_system_volume(volume_percent: int):
     """Changes the master volume of the entire Windows system."""
     try:
         import keyboard
@@ -267,7 +288,8 @@ def change_system_volume(volume_percent):
     except Exception as e:
         return f"Error changing system volume: {e}"
 
-def list_directory(path):
+@tools.action(description="Lists the contents of a specified directory on the computer.")
+def list_directory(path: str):
     """Lists the contents of a specified directory on the computer."""
     try:
         if not os.path.exists(path):
@@ -294,7 +316,8 @@ def list_directory(path):
     except Exception as e:
         return f"Error reading directory {path}: {e}"
 
-def read_file(path):
+@tools.action(description="Reads the text contents of a file at the given absolute path.")
+def read_file(path: str):
     """Reads the text contents of a file."""
     try:
         if not os.path.exists(path):
@@ -314,7 +337,8 @@ def read_file(path):
     except Exception as e:
         return f"Error reading file {path}: {e}"
 
-def create_file(path, content):
+@tools.action(description="Creates a new file or overwrites an existing one with the specified text content at the given absolute path.")
+def create_file(path: str, content: str):
     """Creates a new file or overwrites an existing one with text content."""
     try:
         # Ensure the parent directory exists
