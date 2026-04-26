@@ -1,6 +1,8 @@
 import os
 import re
 import json
+import asyncio
+import inspect
 import traceback
 import logging
 from groq import Groq
@@ -39,10 +41,13 @@ SYSTEM INFO:
 """
 
 from actions.system_ops import tools as agent_tools
-import json
+from actions.mcp_tools import load_mcp_tools
+
+# Load any configured MCP servers before grabbing schemas
+load_mcp_tools()
 
 class SessionMemory:
-    def __init__(self, session_id="aria_main", db_path="aria_memory.json"):
+    def __init__(self, session_id="aria_main", db_path=os.path.join("memory", "aria_memory.json")):
         self.db_path = db_path
         self.history = []
         self._load()
@@ -75,7 +80,7 @@ class SessionMemory:
 
 tools = agent_tools.get_json_schemas()
 
-memory = SessionMemory(session_id="aria_main", db_path="aria_memory.json")
+memory = SessionMemory(session_id="aria_main", db_path=os.path.join("memory", "aria_memory.json"))
 if not memory.get_memory():
     memory.add({"role": "system", "content": SYSTEM_PROMPT})
 
@@ -209,9 +214,19 @@ def ask_aria(user_input, update_callback=None):
 
                 # ── Execute the tool — isolated so one crash can't kill the whole response ──
                 try:
-                    # We use Python's built-in getattr to dynamically route the function execution
-                    function_to_call = getattr(ops, function_name)
+                    # Resolve callables from the shared toolkit first (includes MCP tools),
+                    # then fall back to local module functions for legacy compatibility.
+                    registered_tool = agent_tools.tools.get(function_name)
+                    function_to_call = None
+                    if registered_tool and getattr(registered_tool, "original_func", None):
+                        function_to_call = registered_tool.original_func
+                    else:
+                        function_to_call = getattr(ops, function_name)
+
                     function_response = function_to_call(**function_args)
+                    if inspect.isawaitable(function_response):
+                        function_response = asyncio.run(function_response)
+
                     print(f"  [✓ Tool Output: {str(function_response)[:200]}]")
                 except TypeError as e:
                     # Wrong arguments were passed — the LLM sent bad params

@@ -106,6 +106,12 @@ Used by validation utilities (`api_validation.py`):
 - `COHERE_API_KEY`
 - `OPENROUTER_API_KEY`
 
+Optional MCP server keys (only needed if those MCP servers are enabled):
+
+- `TAVILY_API_KEY` (for Tavily MCP)
+- `TAVILY_MCP_URL` (optional explicit Tavily remote MCP URL; overrides key-based URL build)
+- `FIRECRAWL_API_KEY` (for Firecrawl MCP)
+
 ---
 
 ## 6) Run Modes
@@ -131,7 +137,14 @@ python discord_aria.py
 Optional diagnostics:
 
 ```bash
-python api_validation.py
-python check_models.py
+python diagnostics/api_validation.py
+python diagnostics/check_models.py
+python diagnostics/run_mcp_test.py
 python audio_check.py
 ```
+
+Runtime files are stored here:
+
+- `logs/aria_errors.log` for error logs
+- `logs/mcp_test_output.log` for MCP test transcripts
+- `memory/aria_memory.json` for saved conversation memory

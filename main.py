@@ -12,7 +12,7 @@ logging.basicConfig(
     level=logging.ERROR,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("aria_errors.log", encoding="utf-8"),
+          logging.FileHandler(os.path.join("logs", "aria_errors.log"), encoding="utf-8"),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -77,7 +77,7 @@ def main():
     print("                       ARIA IS ONLINE")
     print("=" * 60)
     print(f"  Session started: {datetime.now().strftime('%A, %B %d, %Y at %I:%M %p')}")
-    print(f"  Error log: aria_errors.log")
+    print(f"  Error log: logs/aria_errors.log")
     print("=" * 60)
 
     greeting = "Systems initialized. I am online and ready, sir."
@@ -108,7 +108,7 @@ def main():
                 consecutive_errors += 1
                 if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
                     print(f"\n[✗] ARIA has encountered {MAX_CONSECUTIVE_ERRORS} consecutive errors.")
-                    print("    Shutting down to prevent further issues. Check 'aria_errors.log'.")
+                    print("    Shutting down to prevent further issues. Check 'logs/aria_errors.log'.")
                     break
                 continue
             except Exception as e:
@@ -175,11 +175,11 @@ def main():
             )
             print(f"\n[✗] Unexpected System Error: {type(e).__name__}: {e}")
             print("    ARIA is recovering and will continue listening...")
-            print("    (Full error details saved to 'aria_errors.log')")
+            print("    (Full error details saved to 'logs/aria_errors.log')")
             consecutive_errors += 1
             if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
                 print(f"\n[✗] ARIA has encountered {MAX_CONSECUTIVE_ERRORS} consecutive unrecoverable errors.")
-                print("    Shutting down. Please check 'aria_errors.log' for details.")
+                print("    Shutting down. Please check 'logs/aria_errors.log' for details.")
                 break
 
 
