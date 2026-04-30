@@ -5,10 +5,16 @@ import asyncio
 import inspect
 import traceback
 import logging
+import getpass
 from groq import Groq
 import actions.system_ops as ops
+from brain.error_memory import error_memory
 
 logger = logging.getLogger("ARIA.Brain")
+
+
+class RateLimitExhaustedError(Exception):
+    """Raised when all configured models are rate-limited."""
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Groq client — validated at import time so we fail loudly, not silently.
@@ -22,7 +28,7 @@ if not _groq_api_key:
 
 client = Groq(api_key=_groq_api_key)
 
-USERNAME = os.getlogin()
+USERNAME = os.getenv("USERNAME") or getpass.getuser()
 HOME_DIR = os.path.expanduser("~")
 DESKTOP_DIR = os.path.join(HOME_DIR, "Desktop")
 
@@ -33,12 +39,14 @@ CRITICAL RULES:
 1. KEEP YOUR RESPONSES EXTREMELY SHORT AND CONCISE. (1 to 3 sentences maximum).
 2. DO NOT use markdown symbols like asterisks (*) or hashes (#) because the Text-to-Speech audio engine will literally read them out loud. However, you MAY use newlines/line breaks to format lists cleanly on the screen.
 3. Be polite, direct, and slightly formal but friendly.
+4. When using tavily_search, ALWAYS call it with the argument query="your search terms here". Never call tavily_search with empty arguments. Example: tavily_search(query="latest AI news 2026").
+5. The 'sequentialthinking' tool is for internal reasoning only and does NOT execute actions. Only call it when you must reason in multiple steps. When calling it, include the required fields: thought, nextThoughtNeeded, thoughtNumber, totalThoughts (and optional fields like isRevision, revisesThought, branchFromThought, branchId, needsMoreThoughts). For actions, call the real action tools directly.
 
 SYSTEM INFO:
 - The user's Windows Username is: {USERNAME}
 - The user's Home Directory is: {HOME_DIR}
 - The user's Desktop path is: {DESKTOP_DIR}
-"""
+""" 
 
 from actions.system_ops import tools as agent_tools
 from actions.mcp_tools import load_mcp_tools
@@ -84,8 +92,75 @@ memory = SessionMemory(session_id="aria_main", db_path=os.path.join("memory", "a
 if not memory.get_memory():
     memory.add({"role": "system", "content": SYSTEM_PROMPT})
 
-def safe_chat_completion(messages, tools_list=None, tool_choice_val=None):
-    """A hybrid router that cascades through multiple models if rate limits are hit."""
+
+def _resolve_known_fix(error_type, error_message, location, update_callback=None):
+    known_fix = error_memory.find_best_fix(
+        error_type=error_type,
+        error_message=error_message,
+        location=location,
+    )
+    if not known_fix:
+        return None
+
+    resolution = known_fix.get("resolution", "").strip()
+    if not resolution:
+        return None
+
+    notice = f"Known fix found for {error_type}: {resolution}"
+    print(f"  [i] {notice}")
+    if update_callback:
+        try:
+            update_callback(notice)
+        except Exception:
+            pass
+
+    error_memory.record_error(
+        error_type=error_type,
+        error_message=error_message,
+        location=location,
+        attempted_step=f"Applied known fix ({known_fix.get('match_type', 'unknown')})",
+        outcome="mitigated",
+        resolution=resolution,
+    )
+    return resolution
+
+# Track temporarily rate-limited models to avoid retrying them repeatedly
+_rate_limited_until = {}
+
+def _parse_retry_seconds(err_text: str) -> int:
+    """Parse human-readable retry hints like 'try again in 30m51.552s' or 'try again in 30m' or 'try again in 45s'."""
+    import re
+    now_secs = 0
+    m = re.search(r"try again in\s*(\d+)m(\d+(?:\.\d+)?)s", err_text)
+    if m:
+        mins = int(m.group(1))
+        secs = float(m.group(2))
+        return int(mins * 60 + secs)
+    m = re.search(r"try again in\s*(\d+)m", err_text)
+    if m:
+        mins = int(m.group(1))
+        return int(mins * 60)
+    m = re.search(r"try again in\s*(\d+(?:\.\d+)?)s", err_text)
+    if m:
+        secs = float(m.group(1))
+        return int(secs)
+    # Fallback: look for 'in Xh' or 'hours'
+    m = re.search(r"in\s*(\d+)h", err_text)
+    if m:
+        hours = int(m.group(1))
+        return hours * 3600
+    return 60  # default 1 minute cooldown
+
+
+def safe_chat_completion(messages, tools_list=None, tool_choice_val=None, update_callback=None):
+    """A hybrid router that cascades through multiple models if rate limits are hit.
+
+    This version respects short cooldowns for models that return rate-limit hints so
+    the next model takes the load immediately instead of repeatedly retrying the
+    exhausted model.
+    """
+    import time
+
     # List of available Groq models in order of preference and intelligence
     models = [
         "llama-3.3-70b-versatile",
@@ -94,12 +169,22 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None):
         "mixtral-8x7b-32768",
         "gemma2-9b-it"
     ]
-    
+
+    now = time.time()
+    # Filter out temporarily rate-limited models
+    available_models = [m for m in models if _rate_limited_until.get(m, 0) <= now]
+
+    if not available_models:
+        # If all models are on cooldown, pick the one with the earliest retry time and report it
+        soonest = min(((m, _rate_limited_until.get(m, now + 3600)) for m in models), key=lambda x: x[1])
+        retry_in = int(max(0, soonest[1] - now))
+        raise RateLimitExhaustedError(f"All configured models are temporarily rate-limited. Next retry in {retry_in} seconds.")
+
     kwargs = {
         "messages": messages,
         "max_tokens": 2048
     }
-    
+
     if tools_list:
         kwargs["tools"] = tools_list
         kwargs["tool_choice"] = tool_choice_val
@@ -107,17 +192,36 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None):
         # Groq's llama-3.3-70b rejects it with a failed_generation error,
         # which causes the entire request to fall back to text-only mode
         # and ARIA just hallucinates the action instead of executing it.
-        
-    for model in models:
+
+    # Iterate over currently available models (preserving original priority order)
+    for model in [m for m in models if m in available_models]:
         kwargs["model"] = model
         try:
             return client.chat.completions.create(**kwargs)
         except Exception as e:
             error_str = str(e).lower()
 
-            # ── Rate limit: swap to next model ───────────────────────────
+            # ── Rate limit: record cooldown and swap to next model ───────────────────────────
             if "429" in error_str or "rate limit" in error_str or "tokens per day" in error_str or "tokens per minute" in error_str:
-                print(f"  [!] Model '{model}' Rate Limit Reached. Swapping to next model...")
+                # Parse any 'try again in' hints to set a smarter cooldown
+                cooldown = _parse_retry_seconds(str(e))
+                _rate_limited_until[model] = time.time() + max(30, cooldown)
+
+                notice = f"Model {model} limit hit, trying next model. Cooldown set for {cooldown}s."
+                print(f"  [!] {notice}")
+                error_memory.record_error(
+                    error_type="RateLimit",
+                    error_message=str(e),
+                    location="safe_chat_completion",
+                    attempted_step=notice,
+                    outcome="transient",
+                    context=f"model={model}",
+                )
+                if update_callback:
+                    try:
+                        update_callback(notice)
+                    except Exception:
+                        pass
                 logger.warning(f"Rate limit on model '{model}'. Trying next. Error: {e}")
                 continue
 
@@ -148,11 +252,8 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None):
             logger.error(f"Groq API error on model '{model}': {e}\n{traceback.format_exc()}")
             raise e
 
-    # All models exhausted their rate limits
-    raise Exception(
-        "Critical: ALL Groq models have exhausted their rate limits. "
-        "Please wait a few minutes for tokens to refill."
-    )
+    # All available models tried and failed (either due to tool rejections or other errors)
+    raise RateLimitExhaustedError("All limits are hit. Working will be done after 24 hours.")
 
 def ask_aria(user_input, update_callback=None):
     global memory
@@ -165,7 +266,8 @@ def ask_aria(user_input, update_callback=None):
         response = safe_chat_completion(
             messages=memory.get_memory(),
             tools_list=tools,
-            tool_choice_val="auto"
+            tool_choice_val="auto",
+            update_callback=update_callback,
         )
         
         response_message = response.choices[0].message
@@ -233,6 +335,13 @@ def ask_aria(user_input, update_callback=None):
                     logger.error(
                         f"Tool '{function_name}' received invalid arguments {function_args}: {e}"
                     )
+                    error_memory.record_error(
+                        error_type="ToolArgumentError",
+                        error_message=str(e),
+                        location=f"tool:{function_name}",
+                        attempted_step=f"Called with args: {function_args}",
+                        outcome="open",
+                    )
                     function_response = (
                         f"Error: '{function_name}' was called with invalid arguments. "
                         f"Details: {e}"
@@ -242,6 +351,13 @@ def ask_aria(user_input, update_callback=None):
                     logger.error(
                         f"Tool '{function_name}' raised an exception: {e}\n"
                         f"{traceback.format_exc()}"
+                    )
+                    error_memory.record_error(
+                        error_type=type(e).__name__,
+                        error_message=str(e),
+                        location=f"tool:{function_name}",
+                        attempted_step=f"Executed with args: {function_args}",
+                        outcome="open",
                     )
                     function_response = (
                         f"Error: The system action '{function_name}' failed. "
@@ -274,7 +390,10 @@ def ask_aria(user_input, update_callback=None):
                     )
                 }]
 
-            final_response = safe_chat_completion(messages=synthesis_messages)
+            final_response = safe_chat_completion(
+                messages=synthesis_messages,
+                update_callback=update_callback,
+            )
             
             final_text = final_response.choices[0].message.content or ""
             # Strip hallucinated XML tags that reasoning/fallback models inject.
@@ -283,6 +402,18 @@ def ask_aria(user_input, update_callback=None):
             # 2. <function=...></function> (Groq tool hallucinations)
             final_text = re.sub(r'<function=.*?</function>', '', final_text, flags=re.DOTALL)
             final_text = final_text.strip()
+
+            if not final_text and executed_tool_outputs:
+                # Some fallback models occasionally return an empty message after tools.
+                # Build a concise deterministic response from the latest tool outputs.
+                summarized_outputs = []
+                for output in executed_tool_outputs:
+                    name = output.get("name", "tool")
+                    content = str(output.get("content", "")).strip().replace("\n", " ")
+                    if len(content) > 180:
+                        content = content[:180].rstrip() + "..."
+                    summarized_outputs.append(f"{name}: {content}")
+                final_text = "Here is what I found. " + " ".join(summarized_outputs)
             
             # Save strictly as a dict for standard appending
             memory.add({"role": "assistant", "content": final_text})
@@ -298,21 +429,92 @@ def ask_aria(user_input, update_callback=None):
             memory.add({"role": "assistant", "content": reply_text})
             return reply_text
             
+    except RateLimitExhaustedError as e:
+        known_fix_resolution = _resolve_known_fix(
+            error_type="RateLimitExhausted",
+            error_message=str(e),
+            location="ask_aria",
+            update_callback=update_callback,
+        )
+        if known_fix_resolution:
+            return known_fix_resolution
+
+        logger.warning(f"Brain (LLM) Rate Limit Exhausted: {e}")
+        print(f"[-] Brain (LLM) Rate Limit Exhausted: {e}")
+        error_memory.record_error(
+            error_type="RateLimitExhausted",
+            error_message=str(e),
+            location="ask_aria",
+            attempted_step="Exhausted all configured models",
+            outcome="mitigated",
+            resolution="All limits are hit. Working will be done after 24 hours.",
+        )
+        return str(e)
+
     except ConnectionError as e:
+        known_fix_resolution = _resolve_known_fix(
+            error_type="ConnectionError",
+            error_message=str(e),
+            location="ask_aria",
+            update_callback=update_callback,
+        )
+        if known_fix_resolution:
+            return known_fix_resolution
+
         # Network or auth errors — specific, actionable message
         logger.error(f"Brain (LLM) Connection Error: {e}")
         print(f"[-] Brain (LLM) Connection Error: {e}")
+        error_memory.record_error(
+            error_type="ConnectionError",
+            error_message=str(e),
+            location="ask_aria",
+            attempted_step="Called safe_chat_completion",
+            outcome="open",
+        )
         return "I'm unable to reach my cloud reasoning engine right now, sir. Please check your internet connection and API keys."
 
     except MemoryError:
+        known_fix_resolution = _resolve_known_fix(
+            error_type="MemoryError",
+            error_message="Conversation history too large",
+            location="ask_aria",
+            update_callback=update_callback,
+        )
+
         # Conversation history is too large — clear it and recover
         logger.error("Brain (LLM) MemoryError: Conversation history too large. Resetting.")
         print("[-] Brain (LLM) Memory Overflow: Conversation history was too large. Resetting memory.")
+        error_memory.record_error(
+            error_type="MemoryError",
+            error_message="Conversation history too large",
+            location="ask_aria",
+            attempted_step="Cleared memory and re-added system prompt",
+            outcome="mitigated",
+            resolution="Conversation memory reset to recover from overflow",
+        )
         memory.clear()
         memory.add({"role": "system", "content": SYSTEM_PROMPT})
+        if known_fix_resolution:
+            return known_fix_resolution
         return "My conversation memory has been reset due to overflow, sir. Please repeat your request."
 
     except Exception as e:
+        known_fix_resolution = _resolve_known_fix(
+            error_type=type(e).__name__,
+            error_message=str(e),
+            location="ask_aria",
+            update_callback=update_callback,
+        )
+        if known_fix_resolution:
+            return known_fix_resolution
+
         logger.error(f"Brain (LLM) unhandled error: {e}\n{traceback.format_exc()}")
         print(f"[-] Brain (LLM) Error: {type(e).__name__}: {e}")
+        error_memory.record_error(
+            error_type=type(e).__name__,
+            error_message=str(e),
+            location="ask_aria",
+            attempted_step="General exception handler",
+            outcome="open",
+        )
         return "I'm sorry, sir. I encountered an internal error. Please try your request again."

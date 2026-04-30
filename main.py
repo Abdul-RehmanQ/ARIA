@@ -165,7 +165,13 @@ def main():
             except Exception:
                 pass  # Don't block shutdown if TTS is broken
             print("=" * 60)
-            break
+            # Ensure any background threads (keyboard listeners, audio, etc.) can't keep
+            # the process alive by forcing an exit after attempting graceful shutdown.
+            try:
+                import os
+                os._exit(0)
+            except Exception:
+                break
 
         except Exception as e:
             # ── Catch-all: any completely unexpected crash ────────────────
@@ -180,7 +186,11 @@ def main():
             if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
                 print(f"\n[✗] ARIA has encountered {MAX_CONSECUTIVE_ERRORS} consecutive unrecoverable errors.")
                 print("    Shutting down. Please check 'logs/aria_errors.log' for details.")
-                break
+                try:
+                    import os
+                    os._exit(1)
+                except Exception:
+                    break
 
 
 if __name__ == "__main__":

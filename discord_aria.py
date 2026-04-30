@@ -327,7 +327,34 @@ def main():
     if not BOT_TOKEN:
         raise RuntimeError("DISCORD_BOT_TOKEN is missing in .env")
 
-    bot.run(BOT_TOKEN)
+    # Use an explicit event loop so we can catch Ctrl+C and close cleanly.
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    async def _runner():
+        try:
+            await bot.start(BOT_TOKEN)
+        except asyncio.CancelledError:
+            pass
+
+    try:
+        loop.run_until_complete(_runner())
+    except KeyboardInterrupt:
+        # Attempt graceful shutdown, then force exit to ensure process ends.
+        print("\nShutdown signal received (Ctrl+C). Closing Discord bot...")
+        try:
+            loop.run_until_complete(bot.close())
+        except Exception:
+            pass
+        finally:
+            # If background threads (keyboard/pyaudio/etc.) are still alive, force exit.
+            import os
+            os._exit(0)
+    finally:
+        try:
+            loop.close()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

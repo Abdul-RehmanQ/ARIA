@@ -1,0 +1,232 @@
+{
+  "a3fc19574ca15631": {
+    "signature": "a3fc19574ca15631",
+    "error_type": "RateLimit",
+    "error_message": "429 rate limit exceeded",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-26T16:14:13.475605Z",
+    "last_seen": "2026-04-26T16:18:42.904125Z",
+    "count": 15,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-26T16:14:13.475605Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:14:13.481007Z",
+        "step": "Model meta-llama/llama-4-scout-17b-16e-instruct limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:14:13.483640Z",
+        "step": "Model llama-3.1-8b-instant limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:14:13.483640Z",
+        "step": "Model mixtral-8x7b-32768 limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:14:13.488091Z",
+        "step": "Model gemma2-9b-it limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:18:42.860369Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:18:42.864821Z",
+        "step": "Model meta-llama/llama-4-scout-17b-16e-instruct limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:18:42.871266Z",
+        "step": "Model llama-3.1-8b-instant limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:18:42.871266Z",
+        "step": "Model mixtral-8x7b-32768 limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:18:42.876637Z",
+        "step": "Model gemma2-9b-it limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:18:42.885937Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:18:42.895022Z",
+        "step": "Model meta-llama/llama-4-scout-17b-16e-instruct limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:18:42.898162Z",
+        "step": "Model llama-3.1-8b-instant limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:18:42.900124Z",
+        "step": "Model mixtral-8x7b-32768 limit hit, trying next model."
+      },
+      {
+        "at": "2026-04-26T16:18:42.904125Z",
+        "step": "Model gemma2-9b-it limit hit, trying next model."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-26T16:14:13.475605Z",
+        "context": "model=llama-3.3-70b-versatile"
+      },
+      {
+        "at": "2026-04-26T16:14:13.481007Z",
+        "context": "model=meta-llama/llama-4-scout-17b-16e-instruct"
+      },
+      {
+        "at": "2026-04-26T16:14:13.483640Z",
+        "context": "model=llama-3.1-8b-instant"
+      },
+      {
+        "at": "2026-04-26T16:14:13.483640Z",
+        "context": "model=mixtral-8x7b-32768"
+      },
+      {
+        "at": "2026-04-26T16:14:13.488091Z",
+        "context": "model=gemma2-9b-it"
+      },
+      {
+        "at": "2026-04-26T16:18:42.860369Z",
+        "context": "model=llama-3.3-70b-versatile"
+      },
+      {
+        "at": "2026-04-26T16:18:42.864821Z",
+        "context": "model=meta-llama/llama-4-scout-17b-16e-instruct"
+      },
+      {
+        "at": "2026-04-26T16:18:42.871266Z",
+        "context": "model=llama-3.1-8b-instant"
+      },
+      {
+        "at": "2026-04-26T16:18:42.871266Z",
+        "context": "model=mixtral-8x7b-32768"
+      },
+      {
+        "at": "2026-04-26T16:18:42.876637Z",
+        "context": "model=gemma2-9b-it"
+      },
+      {
+        "at": "2026-04-26T16:18:42.885937Z",
+        "context": "model=llama-3.3-70b-versatile"
+      },
+      {
+        "at": "2026-04-26T16:18:42.895022Z",
+        "context": "model=meta-llama/llama-4-scout-17b-16e-instruct"
+      },
+      {
+        "at": "2026-04-26T16:18:42.898162Z",
+        "context": "model=llama-3.1-8b-instant"
+      },
+      {
+        "at": "2026-04-26T16:18:42.900124Z",
+        "context": "model=mixtral-8x7b-32768"
+      },
+      {
+        "at": "2026-04-26T16:18:42.904125Z",
+        "context": "model=gemma2-9b-it"
+      }
+    ]
+  },
+  "976a7164ba19cfd4": {
+    "signature": "976a7164ba19cfd4",
+    "error_type": "RateLimitExhausted",
+    "error_message": "All limits are hit. Working will be done after 24 hours.",
+    "location": "ask_aria",
+    "first_seen": "2026-04-26T16:14:13.488091Z",
+    "last_seen": "2026-04-26T16:18:42.907124Z",
+    "count": 3,
+    "outcome": "mitigated",
+    "resolution": "All limits are hit. Working will be done after 24 hours.",
+    "attempted_steps": [
+      {
+        "at": "2026-04-26T16:14:13.488091Z",
+        "step": "Exhausted all configured models"
+      },
+      {
+        "at": "2026-04-26T16:18:42.883244Z",
+        "step": "Exhausted all configured models"
+      },
+      {
+        "at": "2026-04-26T16:18:42.907124Z",
+        "step": "Applied known fix (exact)"
+      }
+    ],
+    "contexts": []
+  },
+  "2a2331403ea6da01": {
+    "signature": "2a2331403ea6da01",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 96513, Requested 5630. Please try again in 30m51.552s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-29T12:07:10.652635Z",
+    "last_seen": "2026-04-29T12:07:10.652635Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-29T12:07:10.652635Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-29T12:07:10.652635Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "88b2b53d04aa8a8e": {
+    "signature": "88b2b53d04aa8a8e",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 96217, Requested 7975. Please try again in 1h0m21.888s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-29T12:11:26.017319Z",
+    "last_seen": "2026-04-29T12:11:26.017319Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-29T12:11:26.017319Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 3600s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-29T12:11:26.017319Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "0e13877263a069b1": {
+    "signature": "0e13877263a069b1",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 90541, Requested 9668. Please try again in 3m0.576s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T08:59:16.331544Z",
+    "last_seen": "2026-04-30T08:59:16.331544Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T08:59:16.331544Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 180s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T08:59:16.331544Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  }
+}

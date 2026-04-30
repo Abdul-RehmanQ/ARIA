@@ -23,19 +23,55 @@ def get_current_time():
 
 @tools.action(description="Fetches the current weather for a specific city.")
 def get_weather(city_name: str = "Islamabad"):
-    """Fetches the current weather for a specific city using a free, no-key public API."""
+    """Fetches current weather for a city using free no-key providers with fallback."""
     try:
-        # We use wttr.in because it requires zero API keys and is extremely fast
-        url = f"https://wttr.in/{city_name}?format=j1"
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            current_condition = data['current_condition'][0]
-            temp = current_condition['temp_C']
-            desc = current_condition['weatherDesc'][0]['value']
-            return f"The current weather in {city_name} is {temp}°C and is roughly {desc}."
-        else:
-            return f"Sorry, I couldn't reach the weather servers for {city_name} right now."
+        headers = {"User-Agent": "ARIA/1.0 (+https://local)"}
+
+        # Primary provider: wttr.in
+        wttr_url = f"https://wttr.in/{city_name}?format=j1"
+        wttr_response = requests.get(wttr_url, headers=headers, timeout=8)
+        if wttr_response.status_code == 200:
+            data = wttr_response.json()
+            current_condition = data.get("current_condition", [{}])[0]
+            temp = current_condition.get("temp_C")
+            desc = current_condition.get("weatherDesc", [{}])[0].get("value", "unknown")
+            if temp is not None:
+                return f"The current weather in {city_name} is {temp}°C and is roughly {desc}."
+
+        # Fallback provider: Open-Meteo via geocoding
+        geocode_resp = requests.get(
+            "https://geocoding-api.open-meteo.com/v1/search",
+            params={"name": city_name, "count": 1},
+            headers=headers,
+            timeout=8,
+        )
+        if geocode_resp.status_code == 200:
+            geo_data = geocode_resp.json()
+            results = geo_data.get("results") or []
+            if results:
+                latitude = results[0].get("latitude")
+                longitude = results[0].get("longitude")
+                weather_resp = requests.get(
+                    "https://api.open-meteo.com/v1/forecast",
+                    params={
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "current": "temperature_2m,weather_code",
+                    },
+                    headers=headers,
+                    timeout=8,
+                )
+                if weather_resp.status_code == 200:
+                    weather_data = weather_resp.json().get("current", {})
+                    temp = weather_data.get("temperature_2m")
+                    weather_code = weather_data.get("weather_code", "unknown")
+                    if temp is not None:
+                        return (
+                            f"The current weather in {city_name} is {temp}°C "
+                            f"(code {weather_code})."
+                        )
+
+        return f"Sorry, I couldn't reach the weather servers for {city_name} right now."
     except Exception as e:
         return f"Error fetching weather: {e}"
 
@@ -351,3 +387,4 @@ def create_file(path: str, content: str):
         return f"Successfully created file at '{path}'."
     except Exception as e:
         return f"Error writing file to {path}: {e}"
+
