@@ -1,4 +1,5 @@
 groq
+openai
 google-generativeai
 cohere
 azure-cognitiveservices-speech

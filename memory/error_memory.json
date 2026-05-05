@@ -140,8 +140,8 @@
     "error_message": "All limits are hit. Working will be done after 24 hours.",
     "location": "ask_aria",
     "first_seen": "2026-04-26T16:14:13.488091Z",
-    "last_seen": "2026-04-26T16:18:42.907124Z",
-    "count": 3,
+    "last_seen": "2026-05-01T07:51:13.910163Z",
+    "count": 4,
     "outcome": "mitigated",
     "resolution": "All limits are hit. Working will be done after 24 hours.",
     "attempted_steps": [
@@ -155,6 +155,10 @@
       },
       {
         "at": "2026-04-26T16:18:42.907124Z",
+        "step": "Applied known fix (exact)"
+      },
+      {
+        "at": "2026-05-01T07:51:13.910163Z",
         "step": "Applied known fix (exact)"
       }
     ],
@@ -228,5 +232,880 @@
         "context": "model=llama-3.3-70b-versatile"
       }
     ]
+  },
+  "75dc7b8f5a73bc2d": {
+    "signature": "75dc7b8f5a73bc2d",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 88526, Requested 12280. Please try again in 11m36.383999999s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T09:28:18.189504Z",
+    "last_seen": "2026-04-30T09:28:18.189504Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T09:28:18.189504Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 696s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T09:28:18.189504Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "bcb7bf9a62656b58": {
+    "signature": "bcb7bf9a62656b58",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 88278, Requested 12341. Please try again in 8m54.816s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T09:31:52.645016Z",
+    "last_seen": "2026-04-30T09:31:52.645016Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T09:31:52.645016Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 534s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T09:31:52.645016Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "521546e1e406057f": {
+    "signature": "521546e1e406057f",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 87876, Requested 12520. Please try again in 5m42.144s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T09:37:39.728394Z",
+    "last_seen": "2026-04-30T09:37:39.728394Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T09:37:39.728394Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 342s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T09:37:39.728394Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "e32fdcaada1f1281": {
+    "signature": "e32fdcaada1f1281",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 12790, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T09:48:28.865698Z",
+    "last_seen": "2026-04-30T09:48:28.865698Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T09:48:28.865698Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T09:48:28.865698Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "19a7af13251c5098": {
+    "signature": "19a7af13251c5098",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 86946, Requested 13552. Please try again in 7m10.272s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T09:51:02.871825Z",
+    "last_seen": "2026-04-30T09:51:02.871825Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T09:51:02.871825Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 430s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T09:51:02.871825Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "3aa6dcd544628e94": {
+    "signature": "3aa6dcd544628e94",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 86377, Requested 13770. Please try again in 2m7.008s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T09:59:14.393543Z",
+    "last_seen": "2026-04-30T09:59:14.393543Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T09:59:14.393543Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 127s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T09:59:14.393543Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "8088384fa2787421": {
+    "signature": "8088384fa2787421",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 13828, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T12:31:44.323265Z",
+    "last_seen": "2026-04-30T12:31:44.323265Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T12:31:44.323265Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T12:31:44.323265Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "6ac52ff199117830": {
+    "signature": "6ac52ff199117830",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 13949, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T12:32:51.030364Z",
+    "last_seen": "2026-04-30T12:32:51.030364Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T12:32:51.030364Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T12:32:51.030364Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "1ea8567958209486": {
+    "signature": "1ea8567958209486",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 87322, Requested 14141. Please try again in 21m4.032s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T12:37:36.266496Z",
+    "last_seen": "2026-04-30T12:37:36.266496Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T12:37:36.266496Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 1264s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T12:37:36.266496Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "355466aeb8e690d3": {
+    "signature": "355466aeb8e690d3",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 86675, Requested 14519. Please try again in 17m11.616s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T12:46:55.222820Z",
+    "last_seen": "2026-04-30T12:46:55.222820Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T12:46:55.222820Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 1031s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T12:46:55.222820Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "fb30f90e70cc4134": {
+    "signature": "fb30f90e70cc4134",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 86287, Requested 14584. Please try again in 12m32.544s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T12:52:30.901777Z",
+    "last_seen": "2026-04-30T12:52:30.901777Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T12:52:30.901777Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 752s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T12:52:30.901777Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "0fb3968ba5bf169e": {
+    "signature": "0fb3968ba5bf169e",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `meta-llama/llama-4-scout-17b-16e-instruct` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 500000, Used 485812, Requested 15916. Please try again in 4m58.5984s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T12:52:31.071578Z",
+    "last_seen": "2026-04-30T12:52:31.071578Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T12:52:31.071578Z",
+        "step": "Model meta-llama/llama-4-scout-17b-16e-instruct limit hit, trying next model. Cooldown set for 298s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T12:52:31.071578Z",
+        "context": "model=meta-llama/llama-4-scout-17b-16e-instruct"
+      }
+    ]
+  },
+  "95ee47641137a3d7": {
+    "signature": "95ee47641137a3d7",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.1-8b-instant` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Requested 14584, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T12:52:31.227347Z",
+    "last_seen": "2026-04-30T12:52:31.227347Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T12:52:31.227347Z",
+        "step": "Model llama-3.1-8b-instant limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T12:52:31.227347Z",
+        "context": "model=llama-3.1-8b-instant"
+      }
+    ]
+  },
+  "b9a37df764050106": {
+    "signature": "b9a37df764050106",
+    "error_type": "BadRequestError",
+    "error_message": "Error code: 400 - {'error': {'message': 'The model `mixtral-8x7b-32768` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.', 'type': 'invalid_request_error', 'code': 'model_decommissioned'}}",
+    "location": "ask_aria",
+    "first_seen": "2026-04-30T12:52:31.468568Z",
+    "last_seen": "2026-05-01T07:46:31.686606Z",
+    "count": 5,
+    "outcome": "open",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T12:52:31.468568Z",
+        "step": "General exception handler"
+      },
+      {
+        "at": "2026-04-30T17:16:16.240472Z",
+        "step": "General exception handler"
+      },
+      {
+        "at": "2026-04-30T17:16:29.896575Z",
+        "step": "General exception handler"
+      },
+      {
+        "at": "2026-04-30T17:16:52.281863Z",
+        "step": "General exception handler"
+      },
+      {
+        "at": "2026-05-01T07:46:31.686606Z",
+        "step": "General exception handler"
+      }
+    ],
+    "contexts": []
+  },
+  "0a6755132e51e87d": {
+    "signature": "0a6755132e51e87d",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 14595, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T17:12:53.944760Z",
+    "last_seen": "2026-04-30T17:12:53.944760Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T17:12:53.944760Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T17:12:53.944760Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "2ae9941e70e86a43": {
+    "signature": "2ae9941e70e86a43",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 14690, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T17:13:58.643002Z",
+    "last_seen": "2026-04-30T17:13:58.643002Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T17:13:58.643002Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T17:13:58.643002Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "af6588fcfc39afcd": {
+    "signature": "af6588fcfc39afcd",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 14795, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T17:15:14.887591Z",
+    "last_seen": "2026-04-30T17:15:14.887591Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T17:15:14.887591Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T17:15:14.887591Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "41494ec8d9d9e7a1": {
+    "signature": "41494ec8d9d9e7a1",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 14906, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T17:16:15.566149Z",
+    "last_seen": "2026-04-30T17:16:15.566149Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T17:16:15.566149Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T17:16:15.566149Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "4307b20bff01e0e5": {
+    "signature": "4307b20bff01e0e5",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `meta-llama/llama-4-scout-17b-16e-instruct` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 500000, Used 494795, Requested 14293. Please try again in 26m10.4064s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T17:16:15.832222Z",
+    "last_seen": "2026-04-30T17:16:15.832222Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T17:16:15.832222Z",
+        "step": "Model meta-llama/llama-4-scout-17b-16e-instruct limit hit, trying next model. Cooldown set for 1570s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T17:16:15.832222Z",
+        "context": "model=meta-llama/llama-4-scout-17b-16e-instruct"
+      }
+    ]
+  },
+  "d26ccd7986d27d0a": {
+    "signature": "d26ccd7986d27d0a",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.1-8b-instant` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Requested 14906, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-04-30T17:16:16.014855Z",
+    "last_seen": "2026-04-30T17:16:16.014855Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T17:16:16.014855Z",
+        "step": "Model llama-3.1-8b-instant limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-04-30T17:16:16.014855Z",
+        "context": "model=llama-3.1-8b-instant"
+      }
+    ]
+  },
+  "9de9eb215e6043d6": {
+    "signature": "9de9eb215e6043d6",
+    "error_type": "ConnectionError",
+    "error_message": "Your OPENAI API key is invalid or expired. Please update it in your .env file.",
+    "location": "ask_aria",
+    "first_seen": "2026-04-30T17:41:09.842570Z",
+    "last_seen": "2026-04-30T17:41:09.842570Z",
+    "count": 1,
+    "outcome": "open",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-04-30T17:41:09.842570Z",
+        "step": "Called safe_chat_completion"
+      }
+    ],
+    "contexts": []
+  },
+  "d779cfc2fdb5d9d7": {
+    "signature": "d779cfc2fdb5d9d7",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 14956, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:35:12.062752Z",
+    "last_seen": "2026-05-01T07:35:12.062752Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:35:12.062752Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:35:12.062752Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "e10967442525f2e9": {
+    "signature": "e10967442525f2e9",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 15020, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:36:15.659142Z",
+    "last_seen": "2026-05-01T07:36:15.659142Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:36:15.659142Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:36:15.659142Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "646b0ba524b0ec32": {
+    "signature": "646b0ba524b0ec32",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 15207, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:37:24.466869Z",
+    "last_seen": "2026-05-01T07:37:24.466869Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:37:24.466869Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:37:24.466869Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "5897c6d866662ebb": {
+    "signature": "5897c6d866662ebb",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 12994, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:38:35.081024Z",
+    "last_seen": "2026-05-01T07:38:35.081024Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:38:35.081024Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:38:35.081024Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "8e5a091b2d187236": {
+    "signature": "8e5a091b2d187236",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 13093, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:39:36.075179Z",
+    "last_seen": "2026-05-01T07:39:36.075179Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:39:36.075179Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:39:36.075179Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "51f5ff20c81c1872": {
+    "signature": "51f5ff20c81c1872",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 15498, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:40:43.407323Z",
+    "last_seen": "2026-05-01T07:40:43.407323Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:40:43.407323Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:40:43.407323Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "5ba504ed4f5374b1": {
+    "signature": "5ba504ed4f5374b1",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 20253, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:45:02.597708Z",
+    "last_seen": "2026-05-01T07:45:02.597708Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:45:02.597708Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:45:02.597708Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "982c1e8e9ae5ee92": {
+    "signature": "982c1e8e9ae5ee92",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 18517, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:46:30.294658Z",
+    "last_seen": "2026-05-01T07:46:30.294658Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:46:30.294658Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:46:30.294658Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "5fdbadcd19b39ef2": {
+    "signature": "5fdbadcd19b39ef2",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `meta-llama/llama-4-scout-17b-16e-instruct` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 500000, Used 489689, Requested 20859. Please try again in 30m22.6944s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:46:30.789593Z",
+    "last_seen": "2026-05-01T07:46:30.789593Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:46:30.789593Z",
+        "step": "Model meta-llama/llama-4-scout-17b-16e-instruct limit hit, trying next model. Cooldown set for 1822s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:46:30.789593Z",
+        "context": "model=meta-llama/llama-4-scout-17b-16e-instruct"
+      }
+    ]
+  },
+  "c24100d3fbf5c11f": {
+    "signature": "c24100d3fbf5c11f",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.1-8b-instant` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Requested 18517, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:46:31.160750Z",
+    "last_seen": "2026-05-01T07:46:31.160750Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:46:31.160750Z",
+        "step": "Model llama-3.1-8b-instant limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:46:31.160750Z",
+        "context": "model=llama-3.1-8b-instant"
+      }
+    ]
+  },
+  "f933b3410ea1d37f": {
+    "signature": "f933b3410ea1d37f",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 20851, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:51:12.544084Z",
+    "last_seen": "2026-05-01T07:51:12.544084Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:51:12.544084Z",
+        "step": "Model llama-3.3-70b-versatile limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:51:12.544084Z",
+        "context": "model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "b3ea9408a5ea41a3": {
+    "signature": "b3ea9408a5ea41a3",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `meta-llama/llama-4-scout-17b-16e-instruct` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 500000, Used 488056, Requested 20914. Please try again in 25m50.016s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:51:13.012953Z",
+    "last_seen": "2026-05-01T07:51:13.012953Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:51:13.012953Z",
+        "step": "Model meta-llama/llama-4-scout-17b-16e-instruct limit hit, trying next model. Cooldown set for 1550s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:51:13.012953Z",
+        "context": "model=meta-llama/llama-4-scout-17b-16e-instruct"
+      }
+    ]
+  },
+  "51b56a74fafff3c3": {
+    "signature": "51b56a74fafff3c3",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.1-8b-instant` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Requested 20851, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T07:51:13.494285Z",
+    "last_seen": "2026-05-01T07:51:13.494285Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T07:51:13.494285Z",
+        "step": "Model llama-3.1-8b-instant limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T07:51:13.494285Z",
+        "context": "model=llama-3.1-8b-instant"
+      }
+    ]
+  },
+  "cc78a42426df9cfc": {
+    "signature": "cc78a42426df9cfc",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 20874, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T08:01:08.522763Z",
+    "last_seen": "2026-05-01T08:01:08.522763Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T08:01:08.522763Z",
+        "step": "Model llama-3.3-70b-versatile (groq) limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T08:01:08.522763Z",
+        "context": "provider=groq,model=llama-3.3-70b-versatile"
+      }
+    ]
+  },
+  "a1461af6827fc4a1": {
+    "signature": "a1461af6827fc4a1",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `meta-llama/llama-4-scout-17b-16e-instruct` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per day (TPD): Limit 500000, Used 484607, Requested 22905. Please try again in 21m38.0736s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T08:01:09.009325Z",
+    "last_seen": "2026-05-01T08:01:09.009325Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T08:01:09.009325Z",
+        "step": "Model meta-llama/llama-4-scout-17b-16e-instruct (groq) limit hit, trying next model. Cooldown set for 1298s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T08:01:09.009325Z",
+        "context": "provider=groq,model=meta-llama/llama-4-scout-17b-16e-instruct"
+      }
+    ]
+  },
+  "476786b0dd5677b7": {
+    "signature": "476786b0dd5677b7",
+    "error_type": "RateLimit",
+    "error_message": "Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.1-8b-instant` in organization `org_01kpdxx2apfee9fdjt3etfykv5` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Requested 20874, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "location": "safe_chat_completion",
+    "first_seen": "2026-05-01T08:01:09.406790Z",
+    "last_seen": "2026-05-01T08:01:09.406790Z",
+    "count": 1,
+    "outcome": "transient",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T08:01:09.406790Z",
+        "step": "Model llama-3.1-8b-instant (groq) limit hit, trying next model. Cooldown set for 60s."
+      }
+    ],
+    "contexts": [
+      {
+        "at": "2026-05-01T08:01:09.406790Z",
+        "context": "provider=groq,model=llama-3.1-8b-instant"
+      }
+    ]
+  },
+  "35e2aa6d5fa4f517": {
+    "signature": "35e2aa6d5fa4f517",
+    "error_type": "NotFoundError",
+    "error_message": "Error code: 404 - {'error': {'message': 'No endpoints found for meta-llama/llama-3.1-8b-instruct:free.', 'code': 404}, 'user_id': 'user_3CUPTCdqYlR5OjJGbyRyLjkxmJE'}",
+    "location": "ask_aria",
+    "first_seen": "2026-05-01T08:01:11.797726Z",
+    "last_seen": "2026-05-01T08:01:11.797726Z",
+    "count": 1,
+    "outcome": "open",
+    "resolution": "",
+    "attempted_steps": [
+      {
+        "at": "2026-05-01T08:01:11.797726Z",
+        "step": "General exception handler"
+      }
+    ],
+    "contexts": []
   }
 }

@@ -1,5 +1,6 @@
 import os
 import datetime
+import subprocess
 import requests
 from agentscope.tool import Toolkit
 
@@ -161,6 +162,22 @@ def close_application(app_name: str):
         elif "calc" in app_name:
             os.system("taskkill /F /IM CalculatorApp.exe /T")
             return "Successfully closed Calculator."
+        elif "settings" in app_name:
+            # Windows Settings is a UWP app hosted by SystemSettings/ApplicationFrameHost.
+            os.system("taskkill /F /IM SystemSettings.exe /T")
+            os.system("taskkill /F /IM ApplicationFrameHost.exe /T")
+            os.system(
+                "powershell -NoProfile -Command \"Get-Process -Name 'SystemSettings','ApplicationFrameHost' -ErrorAction SilentlyContinue | Stop-Process -Force\""
+            )
+            return "Attempted to close Settings."
+        elif "whatsapp" in app_name:
+            # Desktop and Store variants can use different process names.
+            os.system("taskkill /F /IM WhatsApp.exe /T")
+            os.system("taskkill /F /IM WhatsAppBeta.exe /T")
+            os.system(
+                "powershell -NoProfile -Command \"Get-Process -Name 'WhatsApp*' -ErrorAction SilentlyContinue | Stop-Process -Force\""
+            )
+            return "Attempted to close WhatsApp."
         else:
             # Fallback
             os.system(f"taskkill /F /IM {app_name}.exe /T")
@@ -168,6 +185,66 @@ def close_application(app_name: str):
             
     except Exception as e:
         return f"Error closing application {app_name}: {e}"
+
+@tools.action(description="Lists running processes. Optional filter by name_contains and limit the number of results.")
+def list_processes(name_contains: str = None, limit: int = 50):
+    """Lists running processes with PID and basic stats."""
+    try:
+        safe_limit = int(limit)
+    except Exception:
+        safe_limit = 50
+
+    safe_limit = max(1, min(safe_limit, 200))
+    filter_clause = ""
+    if name_contains:
+        safe_name = str(name_contains).replace("'", "''")
+        filter_clause = f" | Where-Object {{ $_.Name -like '*{safe_name}*' }}"
+
+    ps_cmd = (
+        "Get-Process"
+        + filter_clause
+        + " | Sort-Object -Property CPU -Descending"
+        + f" | Select-Object -First {safe_limit} Name,Id,CPU,WS"
+    )
+
+    result = subprocess.run(
+        ["powershell", "-NoProfile", "-Command", ps_cmd],
+        capture_output=True,
+        text=True,
+    )
+    output = (result.stdout or "").strip() or (result.stderr or "").strip()
+    if not output:
+        return "No processes found."
+    header = f"Processes (top {safe_limit})" if not name_contains else f"Processes matching '{name_contains}'"
+    return f"{header}:\n{output}"
+
+@tools.action(description="Forcefully closes a process by name or PID. Example: 'notepad' or '1234'.")
+def close_process(process_name_or_id: str):
+    """Forcefully closes a process by name or PID."""
+    value = str(process_name_or_id or "").strip()
+    if not value:
+        return "Error: process_name_or_id is required."
+
+    try:
+        pid = int(value)
+    except ValueError:
+        pid = None
+
+    try:
+        if pid is not None:
+            os.system(f"taskkill /F /PID {pid} /T")
+            return f"Attempted to close process with PID {pid}."
+
+        safe_name = value.replace("\"", "").replace("'", "")
+        os.system(f"taskkill /F /IM {safe_name}.exe /T")
+        os.system(f"taskkill /F /IM {safe_name}* /T")
+        os.system(
+            "powershell -NoProfile -Command "
+            f"\"Get-Process -Name '{safe_name}' -ErrorAction SilentlyContinue | Stop-Process -Force\""
+        )
+        return f"Attempted to close process '{safe_name}'."
+    except Exception as e:
+        return f"Error closing process {value}: {e}"
 
 @tools.action(description="Plays music on Spotify. Can play a specific track, an album, a public playlist, or the user's personal 'Liked Songs'. Types: 'track', 'album', 'playlist', 'liked_songs'.")
 def play_spotify_media(query: str, media_type: str = "track"):

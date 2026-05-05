@@ -6,7 +6,10 @@ import inspect
 import traceback
 import logging
 import getpass
+import requests
+from dotenv import load_dotenv
 from groq import Groq
+from openai import OpenAI
 import actions.system_ops as ops
 from brain.error_memory import error_memory
 
@@ -17,16 +20,31 @@ class RateLimitExhaustedError(Exception):
     """Raised when all configured models are rate-limited."""
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Load environment before reading API keys.
+# ──────────────────────────────────────────────────────────────────────────────
+_env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+load_dotenv(_env_path)
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Groq client — validated at import time so we fail loudly, not silently.
 # ──────────────────────────────────────────────────────────────────────────────
 _groq_api_key = os.getenv("GROQ_API_KEY")
-if not _groq_api_key:
+_openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+
+groq_client = Groq(api_key=_groq_api_key) if _groq_api_key else None
+openrouter_client = (
+    OpenAI(api_key=_openrouter_api_key, base_url="https://openrouter.ai/api/v1")
+    if _openrouter_api_key
+    else None
+)
+
+if not groq_client and not openrouter_client:
     raise EnvironmentError(
-        "GROQ_API_KEY is not set in your .env file. "
-        "The LLM brain cannot function without it."
+        "Neither GROQ_API_KEY nor OPENROUTER_API_KEY is set in your .env file. "
+        "The LLM brain cannot function without at least one provider."
     )
 
-client = Groq(api_key=_groq_api_key)
+_model_blocklist = set()
 
 USERNAME = os.getenv("USERNAME") or getpass.getuser()
 HOME_DIR = os.path.expanduser("~")
@@ -39,8 +57,9 @@ CRITICAL RULES:
 1. KEEP YOUR RESPONSES EXTREMELY SHORT AND CONCISE. (1 to 3 sentences maximum).
 2. DO NOT use markdown symbols like asterisks (*) or hashes (#) because the Text-to-Speech audio engine will literally read them out loud. However, you MAY use newlines/line breaks to format lists cleanly on the screen.
 3. Be polite, direct, and slightly formal but friendly.
-4. When using tavily_search, ALWAYS call it with the argument query="your search terms here". Never call tavily_search with empty arguments. Example: tavily_search(query="latest AI news 2026").
-5. The 'sequentialthinking' tool is for internal reasoning only and does NOT execute actions. Only call it when you must reason in multiple steps. When calling it, include the required fields: thought, nextThoughtNeeded, thoughtNumber, totalThoughts (and optional fields like isRevision, revisesThought, branchFromThought, branchId, needsMoreThoughts). For actions, call the real action tools directly.
+4. If the user asks to search the web or find recent news, ALWAYS call tavily_search and set query to the user's request text. Only ask for a query if the user provided no topic at all.
+5. When using tavily_search, ALWAYS pass the 'query' argument as a string containing the search terms. Never call it with empty arguments. Example: tavily_search(query="latest AI news 2026").
+6. The 'sequentialthinking' tool is for internal reasoning only and does NOT execute actions. Only call it when you must reason in multiple steps. When calling it, include the required fields: thought, nextThoughtNeeded, thoughtNumber, totalThoughts (and optional fields like isRevision, revisesThought, branchFromThought, branchId, needsMoreThoughts). For actions, call the real action tools directly.
 
 SYSTEM INFO:
 - The user's Windows Username is: {USERNAME}
@@ -89,8 +108,15 @@ class SessionMemory:
 tools = agent_tools.get_json_schemas()
 
 memory = SessionMemory(session_id="aria_main", db_path=os.path.join("memory", "aria_memory.json"))
-if not memory.get_memory():
+existing_memory = memory.get_memory()
+if not existing_memory:
     memory.add({"role": "system", "content": SYSTEM_PROMPT})
+else:
+    first_entry = existing_memory[0]
+    if first_entry.get("role") != "system" or first_entry.get("content") != SYSTEM_PROMPT:
+        # Keep the system prompt in sync across restarts.
+        memory.history[0] = {"role": "system", "content": SYSTEM_PROMPT}
+        memory._save()
 
 
 def _resolve_known_fix(error_type, error_message, location, update_callback=None):
@@ -152,6 +178,108 @@ def _parse_retry_seconds(err_text: str) -> int:
     return 60  # default 1 minute cooldown
 
 
+def _base_model_specs():
+    specs = []
+
+    if groq_client:
+        specs.extend([
+            {"provider": "groq", "model": "llama-3.3-70b-versatile"},
+            {"provider": "groq", "model": "meta-llama/llama-4-scout-17b-16e-instruct"},
+            {"provider": "groq", "model": "llama-3.1-8b-instant"},
+        ])
+
+    if openrouter_client:
+        env_models = os.getenv("OPENROUTER_FREE_MODELS", "").strip()
+        if env_models:
+            model_list = [m.strip() for m in env_models.split(",") if m.strip()]
+        else:
+            # Default OpenRouter free fallback models.
+            model_list = [
+                "mistralai/mistral-7b-instruct:free",
+                "meta-llama/llama-3.1-8b-instruct:free",
+                "qwen/qwen2.5-7b-instruct:free",
+            ]
+
+        for model in model_list:
+            specs.append({"provider": "openrouter", "model": model})
+
+    return specs
+
+
+def _build_model_specs():
+    specs = _base_model_specs()
+    if not _model_blocklist:
+        return specs
+    return [
+        spec
+        for spec in specs
+        if f"{spec['provider']}:{spec['model']}" not in _model_blocklist
+    ]
+
+
+def _fetch_available_model_ids(label, url, api_key):
+    if not api_key:
+        return None
+
+    try:
+        response = requests.get(
+            url,
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=20,
+        )
+        if response.status_code != 200:
+            logger.warning(f"{label} model list request failed: {response.status_code} {response.text}")
+            return None
+        payload = response.json()
+        data = payload.get("data", []) if isinstance(payload, dict) else []
+        model_ids = set()
+        for entry in data:
+            if isinstance(entry, dict):
+                model_id = entry.get("id") or entry.get("name")
+                if model_id:
+                    model_ids.add(model_id)
+            elif isinstance(entry, str):
+                model_ids.add(entry)
+        return model_ids
+    except Exception as exc:
+        logger.warning(f"{label} model list request failed: {exc}")
+        return None
+
+
+def _preflight_model_availability():
+    base_specs = _base_model_specs()
+    if not base_specs:
+        return
+
+    groq_ids = _fetch_available_model_ids(
+        "Groq",
+        "https://api.groq.com/openai/v1/models",
+        _groq_api_key,
+    )
+    openrouter_ids = _fetch_available_model_ids(
+        "OpenRouter",
+        "https://openrouter.ai/api/v1/models",
+        _openrouter_api_key,
+    )
+
+    for spec in base_specs:
+        provider = spec["provider"]
+        model = spec["model"]
+        key = f"{provider}:{model}"
+
+        if provider == "groq" and groq_ids is not None:
+            if model not in groq_ids:
+                _model_blocklist.add(key)
+                print(f"  [!] Preflight: Groq model '{model}' not available. Skipping.")
+        elif provider == "openrouter" and openrouter_ids is not None:
+            if model not in openrouter_ids:
+                _model_blocklist.add(key)
+                print(f"  [!] Preflight: OpenRouter model '{model}' not available. Skipping.")
+
+
+_preflight_model_availability()
+
+
 def safe_chat_completion(messages, tools_list=None, tool_choice_val=None, update_callback=None):
     """A hybrid router that cascades through multiple models if rate limits are hit.
 
@@ -161,24 +289,30 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None, update
     """
     import time
 
-    # List of available Groq models in order of preference and intelligence
-    models = [
-        "llama-3.3-70b-versatile",
-        "meta-llama/llama-4-scout-17b-16e-instruct",
-        "llama-3.1-8b-instant",
-        "mixtral-8x7b-32768",
-        "gemma2-9b-it"
-    ]
+    model_specs = _build_model_specs()
+    if not model_specs:
+        raise RateLimitExhaustedError("No configured models are available for routing.")
 
     now = time.time()
     # Filter out temporarily rate-limited models
-    available_models = [m for m in models if _rate_limited_until.get(m, 0) <= now]
+    available_specs = [
+        spec for spec in model_specs
+        if _rate_limited_until.get(f"{spec['provider']}:{spec['model']}", 0) <= now
+    ]
 
-    if not available_models:
+    if not available_specs:
         # If all models are on cooldown, pick the one with the earliest retry time and report it
-        soonest = min(((m, _rate_limited_until.get(m, now + 3600)) for m in models), key=lambda x: x[1])
+        soonest = min(
+            (
+                (spec, _rate_limited_until.get(f"{spec['provider']}:{spec['model']}", now + 3600))
+                for spec in model_specs
+            ),
+            key=lambda item: item[1],
+        )
         retry_in = int(max(0, soonest[1] - now))
-        raise RateLimitExhaustedError(f"All configured models are temporarily rate-limited. Next retry in {retry_in} seconds.")
+        raise RateLimitExhaustedError(
+            f"All configured models are temporarily rate-limited. Next retry in {retry_in} seconds."
+        )
 
     kwargs = {
         "messages": messages,
@@ -194,10 +328,16 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None, update
         # and ARIA just hallucinates the action instead of executing it.
 
     # Iterate over currently available models (preserving original priority order)
-    for model in [m for m in models if m in available_models]:
+    for spec in available_specs:
+        provider = spec["provider"]
+        model = spec["model"]
         kwargs["model"] = model
         try:
-            return client.chat.completions.create(**kwargs)
+            if provider == "groq" and groq_client:
+                return groq_client.chat.completions.create(**kwargs)
+            if provider == "openrouter" and openrouter_client:
+                return openrouter_client.chat.completions.create(**kwargs)
+            raise RuntimeError(f"Provider '{provider}' is not configured.")
         except Exception as e:
             error_str = str(e).lower()
 
@@ -205,9 +345,13 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None, update
             if "429" in error_str or "rate limit" in error_str or "tokens per day" in error_str or "tokens per minute" in error_str:
                 # Parse any 'try again in' hints to set a smarter cooldown
                 cooldown = _parse_retry_seconds(str(e))
-                _rate_limited_until[model] = time.time() + max(30, cooldown)
+                rate_key = f"{provider}:{model}"
+                _rate_limited_until[rate_key] = time.time() + max(30, cooldown)
 
-                notice = f"Model {model} limit hit, trying next model. Cooldown set for {cooldown}s."
+                notice = (
+                    f"Model {model} ({provider}) limit hit, trying next model. "
+                    f"Cooldown set for {cooldown}s."
+                )
                 print(f"  [!] {notice}")
                 error_memory.record_error(
                     error_type="RateLimit",
@@ -215,41 +359,59 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None, update
                     location="safe_chat_completion",
                     attempted_step=notice,
                     outcome="transient",
-                    context=f"model={model}",
+                    context=f"provider={provider},model={model}",
                 )
                 if update_callback:
                     try:
                         update_callback(notice)
                     except Exception:
                         pass
-                logger.warning(f"Rate limit on model '{model}'. Trying next. Error: {e}")
+                logger.warning(f"Rate limit on model '{model}' ({provider}). Trying next. Error: {e}")
+                continue
+
+            # ── Decommissioned model: skip to next model ───────────────────────
+            if "decommissioned" in error_str or "model_decommissioned" in error_str:
+                print(f"  [!] Model '{model}' ({provider}) has been decommissioned. Skipping...")
+                logger.warning(f"Model '{model}' ({provider}) decommissioned. Skipping. Error: {e}")
+                continue
+
+            if (
+                "model not found" in error_str
+                or "does not exist" in error_str
+                or "invalid model" in error_str
+                or "no endpoints found" in error_str
+            ):
+                print(f"  [!] Model '{model}' ({provider}) not found. Skipping...")
+                logger.warning(f"Model '{model}' ({provider}) not found. Error: {e}")
                 continue
 
             # ── Tool call rejected: skip to next model WITH tools still on ──────
             # IMPORTANT: do NOT fall back to text-only here — that causes ARIA to
             # hallucinate the action ("Spotify is opening!") without actually doing it.
             if tools_list and ("tool_use_failed" in error_str or "failed_generation" in error_str):
-                print(f"  [!] Model '{model}' rejected a tool call. Trying next model...")
-                logger.warning(f"Tool call rejected by '{model}'. Skipping to next model. Error: {e}")
+                print(f"  [!] Model '{model}' ({provider}) rejected a tool call. Trying next model...")
+                logger.warning(f"Tool call rejected by '{model}' ({provider}). Skipping to next model. Error: {e}")
                 continue  # Try the next model in the list with tools still active
 
             # ── Auth error: no point trying other models ──────────────────
             if "401" in error_str or "authentication" in error_str or "invalid api key" in error_str:
-                logger.error(f"Groq API key is invalid or expired: {e}")
+                logger.error(f"API key is invalid or expired for provider '{provider}': {e}")
                 raise ConnectionError(
-                    "Your GROQ_API_KEY is invalid or expired. "
+                    f"Your {provider.upper()} API key is invalid or expired. "
                     "Please update it in your .env file."
                 ) from e
 
             # ── Network error: no point trying other models ───────────────
             if "connection" in error_str or "timeout" in error_str or "network" in error_str:
-                logger.error(f"Network error contacting Groq API: {e}")
+                logger.error(f"Network error contacting provider '{provider}' API: {e}")
                 raise ConnectionError(
-                    "Could not reach the Groq API. Please check your internet connection."
+                    f"Could not reach the {provider} API. Please check your internet connection."
                 ) from e
 
             # ── Anything else: surface it immediately ─────────────────────
-            logger.error(f"Groq API error on model '{model}': {e}\n{traceback.format_exc()}")
+            logger.error(
+                f"Provider API error on model '{model}' ({provider}): {e}\n{traceback.format_exc()}"
+            )
             raise e
 
     # All available models tried and failed (either due to tool rejections or other errors)
