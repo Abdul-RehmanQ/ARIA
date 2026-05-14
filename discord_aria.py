@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 from audio.stt import transcribe_audio_file
-from brain.llm_router import ask_aria
+from brain.llm_router import ask_ultron
 
 BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 AUTHORIZED_USER_ID_RAW = os.getenv("AUTHORIZED_USER_ID")
@@ -317,7 +317,7 @@ async def on_message(message):
                 pass
 
         await _send_throttled(message.channel, "Processing request...", dedupe=True)
-        final_response = await asyncio.to_thread(ask_aria, user_text, update_callback)
+        final_response = await asyncio.to_thread(ask_ultron, user_text, update_callback)
         await _send_response(message.channel, final_response)
     finally:
         ACTIVE_CHANNEL_REQUESTS.discard(channel_id)

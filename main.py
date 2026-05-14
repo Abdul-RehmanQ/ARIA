@@ -63,7 +63,7 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from brain.llm_router import ask_aria
+    from brain.llm_router import ask_ultron
 except ImportError as e:
     logger.error(f"FATAL: Could not import Brain module (brain/llm_router.py): {e}")
     sys.exit(1)
@@ -127,7 +127,7 @@ def main():
 
             # ── Think ─────────────────────────────────────────────────────
             try:
-                response = ask_aria(user_text)
+                response = ask_ultron(user_text)
             except MemoryError:
                 logger.error("MemoryError: Conversation history may be too large.")
                 response = "I'm sorry, sir. My memory is overloaded. Let me reset."

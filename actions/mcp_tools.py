@@ -34,11 +34,11 @@ STDIO_SERVERS = [
         "command": ["cmd", "/c", "npx", "-y", "mcp-remote", "__TAVILY_REMOTE_URL__"],
         "required_env": [],
     },
-    {
-        "name": "firecrawl_mcp",
-        "command": ["cmd", "/c", "npx", "-y", "firecrawl-mcp"],
-        "required_env": ["FIRECRAWL_API_KEY"],
-    },
+    # {
+    #     "name": "firecrawl_mcp",
+    #     "command": ["cmd", "/c", "npx", "-y", "firecrawl-mcp"],
+    #     "required_env": ["FIRECRAWL_API_KEY"],
+    # },
 ]
 
 _MCP_LOADED = False

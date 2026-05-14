@@ -408,6 +408,12 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None, update
                     f"Could not reach the {provider} API. Please check your internet connection."
                 ) from e
 
+            # ── Bad Request / Tool Parsing error: skip to next model ──────────────
+            if "400" in error_str or "badrequest" in error_str:
+                print(f"  [!] Model '{model}' ({provider}) returned Bad Request (likely incompatible tools). Skipping...")
+                logger.warning(f"Bad Request on model '{model}' ({provider}). Skipping. Error: {e}")
+                continue
+
             # ── Anything else: surface it immediately ─────────────────────
             logger.error(
                 f"Provider API error on model '{model}' ({provider}): {e}\n{traceback.format_exc()}"
@@ -417,7 +423,7 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None, update
     # All available models tried and failed (either due to tool rejections or other errors)
     raise RateLimitExhaustedError("All limits are hit. Working will be done after 24 hours.")
 
-def ask_aria(user_input, update_callback=None):
+def ask_ultron(user_input, update_callback=None):
     global memory
     
     # Append the user's message
@@ -595,7 +601,7 @@ def ask_aria(user_input, update_callback=None):
         known_fix_resolution = _resolve_known_fix(
             error_type="RateLimitExhausted",
             error_message=str(e),
-            location="ask_aria",
+            location="ask_ultron",
             update_callback=update_callback,
         )
         if known_fix_resolution:
@@ -606,7 +612,7 @@ def ask_aria(user_input, update_callback=None):
         error_memory.record_error(
             error_type="RateLimitExhausted",
             error_message=str(e),
-            location="ask_aria",
+            location="ask_ultron",
             attempted_step="Exhausted all configured models",
             outcome="mitigated",
             resolution="All limits are hit. Working will be done after 24 hours.",
@@ -617,7 +623,7 @@ def ask_aria(user_input, update_callback=None):
         known_fix_resolution = _resolve_known_fix(
             error_type="ConnectionError",
             error_message=str(e),
-            location="ask_aria",
+            location="ask_ultron",
             update_callback=update_callback,
         )
         if known_fix_resolution:
@@ -629,7 +635,7 @@ def ask_aria(user_input, update_callback=None):
         error_memory.record_error(
             error_type="ConnectionError",
             error_message=str(e),
-            location="ask_aria",
+            location="ask_ultron",
             attempted_step="Called safe_chat_completion",
             outcome="open",
         )
@@ -639,7 +645,7 @@ def ask_aria(user_input, update_callback=None):
         known_fix_resolution = _resolve_known_fix(
             error_type="MemoryError",
             error_message="Conversation history too large",
-            location="ask_aria",
+            location="ask_ultron",
             update_callback=update_callback,
         )
 
@@ -649,7 +655,7 @@ def ask_aria(user_input, update_callback=None):
         error_memory.record_error(
             error_type="MemoryError",
             error_message="Conversation history too large",
-            location="ask_aria",
+            location="ask_ultron",
             attempted_step="Cleared memory and re-added system prompt",
             outcome="mitigated",
             resolution="Conversation memory reset to recover from overflow",
@@ -664,7 +670,7 @@ def ask_aria(user_input, update_callback=None):
         known_fix_resolution = _resolve_known_fix(
             error_type=type(e).__name__,
             error_message=str(e),
-            location="ask_aria",
+            location="ask_ultron",
             update_callback=update_callback,
         )
         if known_fix_resolution:
@@ -675,7 +681,7 @@ def ask_aria(user_input, update_callback=None):
         error_memory.record_error(
             error_type=type(e).__name__,
             error_message=str(e),
-            location="ask_aria",
+            location="ask_ultron",
             attempted_step="General exception handler",
             outcome="open",
         )
