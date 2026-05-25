@@ -2,12 +2,9 @@ groq
 openai
 google-generativeai
 cohere
-azure-cognitiveservices-speech
-python-dotenv
+python-dotenv==1.0.1
 SpeechRecognition==3.10.1
 pyaudio==0.2.14
-azure-cognitiveservices-speech==1.36.0
-python-dotenv==1.0.1
 Pillow==10.3.0
 spotipy==2.23.0
 keyboard==0.13.5
@@ -18,3 +15,6 @@ discord.py
 aiohttp
 agentscope
 mcp-server-fetch
+kokoro-onnx
+onnxruntime
+sounddevice

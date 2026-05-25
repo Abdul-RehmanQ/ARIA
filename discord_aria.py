@@ -259,6 +259,15 @@ async def on_message(message):
         )
         return
 
+    if normalized_text in {"!compress", "compress", "/compress"}:
+        await _send_throttled(message.channel, "Attempting memory compression...", dedupe=True)
+        from brain.llm_router import memory, _summarize_messages
+        if memory.compress(_summarize_messages):
+            await _send_throttled(message.channel, "Memory compressed successfully.")
+        else:
+            await _send_throttled(message.channel, "Nothing to compress — memory is within limits.")
+        return
+
     channel_id = message.channel.id
     if channel_id in ACTIVE_CHANNEL_REQUESTS:
         await _send_throttled(

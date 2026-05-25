@@ -73,37 +73,7 @@ from actions.mcp_tools import load_mcp_tools
 # Load any configured MCP servers before grabbing schemas
 load_mcp_tools()
 
-class SessionMemory:
-    def __init__(self, session_id="aria_main", db_path=os.path.join("memory", "aria_memory.json")):
-        self.db_path = db_path
-        self.history = []
-        self._load()
-
-    def _load(self):
-        if os.path.exists(self.db_path):
-            try:
-                with open(self.db_path, "r", encoding="utf-8") as f:
-                    self.history = json.load(f)
-            except Exception:
-                pass
-
-    def _save(self):
-        try:
-            with open(self.db_path, "w", encoding="utf-8") as f:
-                json.dump(self.history, f)
-        except Exception:
-            pass
-
-    def add(self, message):
-        self.history.append(message)
-        self._save()
-
-    def get_memory(self):
-        return self.history
-
-    def clear(self):
-        self.history.clear()
-        self._save()
+from brain.session_memory import SessionMemory
 
 tools = agent_tools.get_json_schemas()
 
@@ -423,8 +393,78 @@ def safe_chat_completion(messages, tools_list=None, tool_choice_val=None, update
     # All available models tried and failed (either due to tool rejections or other errors)
     raise RateLimitExhaustedError("All limits are hit. Working will be done after 24 hours.")
 
+
+def _summarize_messages(messages: list) -> str:
+    """
+    Calls the LLM to summarize a list of old messages into a compact paragraph.
+    Uses the smallest/cheapest available model to save tokens.
+    """
+    if not messages:
+        return ""
+
+    # Format messages into readable text
+    formatted = []
+    for m in messages:
+        role = m.get("role", "unknown")
+        content = m.get("content", "")
+        if isinstance(content, str) and content.strip():
+            formatted.append(f"{role.upper()}: {content.strip()}")
+
+    if not formatted:
+        return ""
+
+    conversation_text = "\n".join(formatted)
+
+    summary_prompt = [
+        {
+            "role": "system",
+            "content": (
+                "You are a memory compression assistant. "
+                "Summarize the following conversation excerpt into a single compact paragraph. "
+                "Preserve all important facts, decisions, user preferences, and context. "
+                "Be concise. Do not editorialize."
+            )
+        },
+        {
+            "role": "user",
+            "content": f"Summarize this conversation:\n\n{conversation_text}"
+        }
+    ]
+
+    try:
+        if groq_client:
+            response = groq_client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=summary_prompt,
+                max_tokens=400
+            )
+            return response.choices[0].message.content.strip()
+        elif openrouter_client:
+            response = openrouter_client.chat.completions.create(
+                model="meta-llama/llama-3.1-8b-instruct:free",
+                messages=summary_prompt,
+                max_tokens=400
+            )
+            return response.choices[0].message.content.strip()
+        else:
+            raise RuntimeError("No LLM clients available for summarization.")
+    except Exception as e:
+        print(f"  [!] Summarizer LLM call failed: {e}")
+        return f"[Summary unavailable — compression attempted at {len(messages)} messages]"
+
+
 def ask_ultron(user_input, update_callback=None):
     global memory
+
+    # Compress memory if it has grown too large
+    if memory.needs_compression():
+        print("  [i] Memory threshold reached — compressing old messages...")
+        if update_callback:
+            try:
+                update_callback("Compressing memory...")
+            except Exception:
+                pass
+        memory.compress(_summarize_messages)
     
     # Append the user's message
     memory.add({"role": "user", "content": user_input})
@@ -686,3 +726,7 @@ def ask_ultron(user_input, update_callback=None):
             outcome="open",
         )
         return "I'm sorry, sir. I encountered an internal error. Please try your request again."
+
+
+# Alias ask_aria to ask_ultron for backwards compatibility with the test suite and diagnostics
+ask_aria = ask_ultron

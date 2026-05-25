@@ -197,6 +197,38 @@ try:
     else:
         fail("Memory persistence", result.stderr or result.stdout)
 
+    # Test compression triggers correctly
+    from brain.session_memory import SessionMemory, MAX_MESSAGES
+    test_mem_path = os.path.join("memory", "test_compression.json")
+    test_mem = SessionMemory(session_id="test", db_path=test_mem_path)
+    test_mem.add({"role": "system", "content": "system prompt"})
+    for i in range(MAX_MESSAGES + 5):
+        test_mem.add({"role": "user", "content": f"test message {i}"})
+
+    if test_mem.needs_compression():
+        ok("needs_compression() triggers at correct threshold")
+    else:
+        fail("needs_compression()", f"Expected True at {len(test_mem.get_memory())} messages")
+
+    # Test memory compression execution
+    dummy_summarizer = lambda msgs: f"compressed {len(msgs)} messages"
+    if test_mem.compress(dummy_summarizer):
+        ok("compress() executes compression successfully")
+        reloaded_history = test_mem.get_memory()
+        if len(reloaded_history) == 22:
+            ok("compress() keeps correct number of messages (22)")
+        else:
+            fail("compress() count verification", f"Expected 22 messages, got {len(reloaded_history)}")
+    else:
+        fail("compress()", "Compression failed or was skipped")
+
+    # cleanup
+    if os.path.exists(test_mem_path):
+        try:
+            os.remove(test_mem_path)
+        except Exception:
+            pass
+
 except Exception as e:
     fail("Memory layer", str(e))
 

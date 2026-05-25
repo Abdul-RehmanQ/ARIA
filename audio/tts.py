@@ -1,136 +1,103 @@
 import os
-import io
-import wave
-import threading
-import traceback
+import time
 import logging
-import pyaudio
-import azure.cognitiveservices.speech as speechsdk
+import numpy as np
+import wave
+import tempfile
 
 logger = logging.getLogger("ARIA.TTS")
 
-# Global lock to prevent overlapping voices
-speak_lock = threading.Lock()
+KOKORO_DIR = os.path.join(os.path.dirname(__file__), "kokoro")
+MODEL_PATH = os.path.join(KOKORO_DIR, "kokoro-v1.0.int8.onnx")
+VOICES_PATH = os.path.join(KOKORO_DIR, "voices-v1.0.bin")
+SAMPLE_RATE = 24000  # Kokoro-82M native output rate
+
+MODEL_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx"
+VOICES_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
 
 
-def speak(text):
-    """
-    Synthesises the given text to speech via Azure and plays it synchronously
-    through PyAudio. All errors are caught and logged — TTS failure is always
-    non-fatal so ARIA continues running even if the voice goes down.
-    """
+def _download_file(url: str, dest: str):
+    import urllib.request
+    import sys
+    filename = os.path.basename(dest)
+    print(f"  [v] Downloading {filename}...")
+    try:
+        def progress(count, block_size, total_size):
+            if total_size > 0:
+                percent = min(100, int(count * block_size * 100 / total_size))
+                sys.stdout.write(f"\r      Downloading: {percent}%")
+                sys.stdout.flush()
+        urllib.request.urlretrieve(url, dest, reporthook=progress)
+        print(f"\n  [OK] {filename} downloaded.")
+    except Exception as e:
+        # Remove partial file if download failed
+        if os.path.exists(dest):
+            try:
+                os.remove(dest)
+            except Exception:
+                pass
+        raise RuntimeError(f"Failed to download {filename}: {e}") from e
+
+
+def _ensure_kokoro_files():
+    os.makedirs(KOKORO_DIR, exist_ok=True)
+    if not os.path.exists(MODEL_PATH):
+        _download_file(MODEL_URL, MODEL_PATH)
+    if not os.path.exists(VOICES_PATH):
+        _download_file(VOICES_URL, VOICES_PATH)
+
+
+# Module-level model instance — loaded once, reused across all calls
+_kokoro = None
+
+def _get_kokoro():
+    global _kokoro
+    if _kokoro is None:
+        try:
+            _ensure_kokoro_files()
+            from kokoro_onnx import Kokoro
+            _kokoro = Kokoro(MODEL_PATH, VOICES_PATH)
+            logger.info("Kokoro TTS engine loaded successfully.")
+        except Exception as e:
+            logger.error(f"Failed to load Kokoro TTS: {e}")
+            raise
+    return _kokoro
+
+
+def speak(text: str):
     if not text or not text.strip():
-        # Nothing to say — skip silently
         return
 
-    # ── Validate Azure credentials before making any API call ──────────────
-    azure_key = os.getenv("AZURE_SPEECH_KEY")
-    azure_region = os.getenv("AZURE_SPEECH_REGION")
+    voice = os.getenv("KOKORO_VOICE", "af_heart")
 
-    if not azure_key or not azure_region:
-        missing = []
-        if not azure_key:
-            missing.append("AZURE_SPEECH_KEY")
-        if not azure_region:
-            missing.append("AZURE_SPEECH_REGION")
-        logger.error(
-            f"TTS: Cannot synthesise speech — missing environment variables: "
-            f"{', '.join(missing)}"
-        )
-        print(f"[-] TTS Config Error: {', '.join(missing)} not found in .env file.")
-        return
+    try:
+        import sounddevice as sd
+        kokoro = _get_kokoro()
+        samples, sample_rate = kokoro.create(text, voice=voice, speed=1.0)
+        # samples is float32 numpy array, sounddevice handles it natively
+        sd.play(samples, samplerate=sample_rate)
+        sd.wait()  # block until playback completes
+    except Exception as e:
+        logger.error(f"TTS speak() failed: {e}")
+        print(f"  [!] TTS error: {e}")
 
-    with speak_lock:
-        # ── Configure Azure Speech ──────────────────────────────────────────
-        try:
-            speech_config = speechsdk.SpeechConfig(
-                subscription=azure_key,
-                region=azure_region
-            )
-            voice_name = os.getenv("AZURE_SPEECH_VOICE", "en-GB-RyanNeural")
-            speech_config.speech_synthesis_voice_name = voice_name
-        except Exception as e:
-            logger.error(f"TTS: Failed to create Azure SpeechConfig: {e}\n{traceback.format_exc()}")
-            print(f"[-] TTS Config Error: Could not initialise Azure Speech. ({e})")
-            return
 
-        # ── Synthesise the audio via Azure ──────────────────────────────────
-        try:
-            # audio_config=None streams raw audio back instead of playing it
-            # through Azure's default device so we control exact playback timing.
-            synthesizer = speechsdk.SpeechSynthesizer(
-                speech_config=speech_config,
-                audio_config=None
-            )
-            result = synthesizer.speak_text_async(text).get()
-        except Exception as e:
-            error_str = str(e).lower()
-            if "401" in error_str or "authentication" in error_str:
-                logger.error(f"TTS: Azure Speech API key is invalid or expired: {e}")
-                print("[-] TTS Auth Error: Azure Speech API key is invalid or expired.")
-            elif "connection" in error_str or "network" in error_str:
-                logger.error(f"TTS: Network error connecting to Azure Speech: {e}")
-                print("[-] TTS Network Error: Could not connect to Azure Speech. Check your internet.")
-            else:
-                logger.error(f"TTS: Azure speak_text_async() failed: {e}\n{traceback.format_exc()}")
-                print(f"[-] TTS Synthesis Error: {e}")
-            return
+def speak_to_file(text: str) -> str:
+    """
+    Generates speech and writes to a temp WAV file.
+    Returns the file path. Used by Discord voice channel playback.
+    """
+    voice = os.getenv("KOKORO_VOICE", "af_heart")
+    kokoro = _get_kokoro()
+    samples, sample_rate = kokoro.create(text, voice=voice, speed=1.0)
 
-        # ── Check synthesis result ──────────────────────────────────────────
-        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-            audio_data = result.audio_data
-        elif result.reason == speechsdk.ResultReason.Canceled:
-            cancellation = result.cancellation_details
-            if cancellation.reason == speechsdk.CancellationReason.Error:
-                logger.error(
-                    f"TTS: Azure synthesis cancelled due to error. "
-                    f"Code: {cancellation.error_code}, Details: {cancellation.error_details}"
-                )
-                print(f"[-] TTS Cancelled: {cancellation.error_details}")
-            else:
-                logger.error(f"TTS: Azure synthesis cancelled. Reason: {cancellation.reason}")
-                print(f"[-] TTS Cancelled: {cancellation.reason}")
-            return
-        else:
-            logger.error(f"TTS: Unexpected synthesis result: {result.reason}")
-            print(f"[-] TTS Error: Synthesis returned unexpected result: {result.reason}")
-            return
+    tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+    with wave.open(tmp.name, "w") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)  # 16-bit
+        wf.setframerate(sample_rate)
+        # Convert float32 [-1, 1] to int16
+        pcm = (samples * 32767).astype(np.int16)
+        wf.writeframes(pcm.tobytes())
 
-        # ── Play the synthesised audio via PyAudio ──────────────────────────
-        p = None
-        stream = None
-        try:
-            f = io.BytesIO(audio_data)
-            with wave.open(f, 'rb') as wf:
-                p = pyaudio.PyAudio()
-                stream = p.open(
-                    format=p.get_format_from_width(wf.getsampwidth()),
-                    channels=wf.getnchannels(),
-                    rate=wf.getframerate(),
-                    output=True
-                )
-                # Read and write in chunks — blocks until the speaker physically finishes
-                chunk = wf.readframes(1024)
-                while chunk:
-                    stream.write(chunk)
-                    chunk = wf.readframes(1024)
-
-        except OSError as e:
-            logger.error(f"TTS: Audio output device error during playback: {e}")
-            print(f"[-] TTS Playback Error: Audio output device failed. ({e})")
-        except Exception as e:
-            logger.error(f"TTS: Unexpected error during audio playback: {e}\n{traceback.format_exc()}")
-            print(f"[-] TTS Playback Error: {e}")
-        finally:
-            # Always release audio resources, even if playback errored mid-stream
-            if stream:
-                try:
-                    stream.stop_stream()
-                    stream.close()
-                except Exception:
-                    pass
-            if p:
-                try:
-                    p.terminate()
-                except Exception:
-                    pass
+    return tmp.name

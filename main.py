@@ -33,8 +33,6 @@ load_dotenv(env_path)
 # ──────────────────────────────────────────────────────────────────────────────
 REQUIRED_ENV_KEYS = [
     "GROQ_API_KEY",
-    "AZURE_SPEECH_KEY",
-    "AZURE_SPEECH_REGION",
 ]
 
 missing_keys = [key for key in REQUIRED_ENV_KEYS if not os.getenv(key)]
