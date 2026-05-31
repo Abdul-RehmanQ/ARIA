@@ -20,12 +20,6 @@ Core modules:
   - `transcribe_audio_file()` for Discord voice/audio files
 - **`audio/tts.py`**: Edge TTS with Windows MCI playback for fast, synchronous voice output.
 
-Utility scripts:
-
-- **`api_validation.py`**: Validates API authentication for Gemini, Cohere, Groq, OpenRouter, and Edge TTS availability.
-- **`check_models.py`**: Quick Groq models listing check.
-- **`audio_check.py`**: Local microphone/speaker diagnostic script.
-
 ---
 
 ## 2) LLM Router (`brain/llm_router.py`)
@@ -101,7 +95,7 @@ Optional voice configuration:
 
 - `EDGE_VOICE` (optional; defaults to `en-GB-RyanNeural`; falls back to `AZURE_SPEECH_VOICE` if set)
 
-Used by validation utilities (`api_validation.py`):
+Optional LLM provider keys (only needed if those providers are enabled):
 
 - `GEMINI_API_KEY`
 - `COHERE_API_KEY`
@@ -135,17 +129,4 @@ Run Discord mode:
 python discord_aria.py
 ```
 
-Optional diagnostics:
-
-```bash
-python diagnostics/api_validation.py
-python diagnostics/check_models.py
-python diagnostics/run_mcp_test.py
-python audio_check.py
-```
-
-Runtime files are stored here:
-
-- `logs/aria_errors.log` for error logs
-- `logs/mcp_test_output.log` for MCP test transcripts
-- `memory/aria_memory.json` for saved conversation memory
+Runtime files are stored under `logs/` and `memory/` when ARIA runs.
