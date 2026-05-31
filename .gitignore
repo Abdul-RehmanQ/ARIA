@@ -36,7 +36,3 @@ Thumbs.db
 
 aria_memory.json
 
-# Kokoro TTS models
-audio/kokoro/*.onnx
-audio/kokoro/*.bin
-audio/kokoro/

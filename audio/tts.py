@@ -1,103 +1,119 @@
-import os
-import time
+import asyncio
+import ctypes
 import logging
-import numpy as np
-import wave
+import os
 import tempfile
+import threading
+import uuid
+
+import edge_tts
 
 logger = logging.getLogger("ARIA.TTS")
 
-KOKORO_DIR = os.path.join(os.path.dirname(__file__), "kokoro")
-MODEL_PATH = os.path.join(KOKORO_DIR, "kokoro-v1.0.int8.onnx")
-VOICES_PATH = os.path.join(KOKORO_DIR, "voices-v1.0.bin")
-SAMPLE_RATE = 24000  # Kokoro-82M native output rate
-
-MODEL_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx"
-VOICES_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
+DEFAULT_VOICE = "en-GB-RyanNeural"
 
 
-def _download_file(url: str, dest: str):
-    import urllib.request
-    import sys
-    filename = os.path.basename(dest)
-    print(f"  [v] Downloading {filename}...")
+def _resolve_voice() -> str:
+    return (
+        os.getenv("EDGE_VOICE")
+        or os.getenv("AZURE_SPEECH_VOICE")
+        or DEFAULT_VOICE
+    )
+
+
+async def _synthesize_to_file(text: str, voice: str, out_path: str) -> None:
+    communicator = edge_tts.Communicate(text, voice=voice)
+    await communicator.save(out_path)
+
+
+def _run_async(coro_factory):
     try:
-        def progress(count, block_size, total_size):
-            if total_size > 0:
-                percent = min(100, int(count * block_size * 100 / total_size))
-                sys.stdout.write(f"\r      Downloading: {percent}%")
-                sys.stdout.flush()
-        urllib.request.urlretrieve(url, dest, reporthook=progress)
-        print(f"\n  [OK] {filename} downloaded.")
-    except Exception as e:
-        # Remove partial file if download failed
-        if os.path.exists(dest):
-            try:
-                os.remove(dest)
-            except Exception:
-                pass
-        raise RuntimeError(f"Failed to download {filename}: {e}") from e
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro_factory())
 
+    result_container = {}
+    error_container = {}
 
-def _ensure_kokoro_files():
-    os.makedirs(KOKORO_DIR, exist_ok=True)
-    if not os.path.exists(MODEL_PATH):
-        _download_file(MODEL_URL, MODEL_PATH)
-    if not os.path.exists(VOICES_PATH):
-        _download_file(VOICES_URL, VOICES_PATH)
-
-
-# Module-level model instance — loaded once, reused across all calls
-_kokoro = None
-
-def _get_kokoro():
-    global _kokoro
-    if _kokoro is None:
+    def runner():
         try:
-            _ensure_kokoro_files()
-            from kokoro_onnx import Kokoro
-            _kokoro = Kokoro(MODEL_PATH, VOICES_PATH)
-            logger.info("Kokoro TTS engine loaded successfully.")
-        except Exception as e:
-            logger.error(f"Failed to load Kokoro TTS: {e}")
-            raise
-    return _kokoro
+            result_container["value"] = asyncio.run(coro_factory())
+        except Exception as exc:
+            error_container["error"] = exc
+
+    thread = threading.Thread(target=runner, daemon=True)
+    thread.start()
+    thread.join()
+
+    if "error" in error_container:
+        raise error_container["error"]
+    return result_container.get("value")
 
 
-def speak(text: str):
+if os.name == "nt":
+    _winmm = ctypes.WinDLL("winmm")
+
+    def _mci_send(command: str) -> str:
+        buffer = ctypes.create_unicode_buffer(256)
+        error = _winmm.mciSendStringW(command, buffer, len(buffer), 0)
+        if error:
+            err_buffer = ctypes.create_unicode_buffer(256)
+            _winmm.mciGetErrorStringW(error, err_buffer, len(err_buffer))
+            raise RuntimeError(f"MCI error {error}: {err_buffer.value}")
+        return buffer.value
+
+    def _play_mp3(path: str) -> None:
+        alias = f"aria_tts_{uuid.uuid4().hex}"
+        _mci_send(f'open "{path}" type mpegvideo alias {alias}')
+        try:
+            _mci_send(f"play {alias} wait")
+        finally:
+            _mci_send(f"close {alias}")
+else:
+    def _play_mp3(path: str) -> None:
+        raise RuntimeError("MCI playback is only supported on Windows.")
+
+
+def speak(text: str) -> None:
     if not text or not text.strip():
         return
 
-    voice = os.getenv("KOKORO_VOICE", "af_heart")
+    voice = _resolve_voice()
+    tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
+    tmp.close()
 
     try:
-        import sounddevice as sd
-        kokoro = _get_kokoro()
-        samples, sample_rate = kokoro.create(text, voice=voice, speed=1.0)
-        # samples is float32 numpy array, sounddevice handles it natively
-        sd.play(samples, samplerate=sample_rate)
-        sd.wait()  # block until playback completes
+        _run_async(lambda: _synthesize_to_file(text, voice, tmp.name))
+        _play_mp3(tmp.name)
     except Exception as e:
         logger.error(f"TTS speak() failed: {e}")
         print(f"  [!] TTS error: {e}")
+    finally:
+        try:
+            os.remove(tmp.name)
+        except Exception:
+            pass
 
 
 def speak_to_file(text: str) -> str:
     """
-    Generates speech and writes to a temp WAV file.
+    Generates speech and writes to a temp MP3 file.
     Returns the file path. Used by Discord voice channel playback.
     """
-    voice = os.getenv("KOKORO_VOICE", "af_heart")
-    kokoro = _get_kokoro()
-    samples, sample_rate = kokoro.create(text, voice=voice, speed=1.0)
+    if not text or not text.strip():
+        return ""
 
-    tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-    with wave.open(tmp.name, "w") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)  # 16-bit
-        wf.setframerate(sample_rate)
-        # Convert float32 [-1, 1] to int16
-        pcm = (samples * 32767).astype(np.int16)
-        wf.writeframes(pcm.tobytes())
+    voice = _resolve_voice()
+    tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
+    tmp.close()
 
-    return tmp.name
+    try:
+        _run_async(lambda: _synthesize_to_file(text, voice, tmp.name))
+        return tmp.name
+    except Exception as e:
+        logger.error(f"TTS speak_to_file() failed: {e}")
+        try:
+            os.remove(tmp.name)
+        except Exception:
+            pass
+        raise

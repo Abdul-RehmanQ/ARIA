@@ -18,11 +18,11 @@ Core modules:
 - **`audio/stt.py`**: Speech-to-text using Groq Whisper (`whisper-large-v3-turbo`), including:
   - `listen_and_transcribe()` for live microphone push-to-talk
   - `transcribe_audio_file()` for Discord voice/audio files
-- **`audio/tts.py`**: Azure Speech TTS with locked, synchronous playback through PyAudio to prevent overlapping voice output.
+- **`audio/tts.py`**: Edge TTS with Windows MCI playback for fast, synchronous voice output.
 
 Utility scripts:
 
-- **`api_validation.py`**: Validates API authentication for Gemini, Cohere, Groq, OpenRouter, and Azure Speech.
+- **`api_validation.py`**: Validates API authentication for Gemini, Cohere, Groq, OpenRouter, and Edge TTS availability.
 - **`check_models.py`**: Quick Groq models listing check.
 - **`audio_check.py`**: Local microphone/speaker diagnostic script.
 
@@ -91,14 +91,15 @@ The Discord bot currently includes:
 Required for core desktop/Discord operation:
 
 - `GROQ_API_KEY`
-- `AZURE_SPEECH_KEY`
-- `AZURE_SPEECH_REGION`
-- `AZURE_SPEECH_VOICE` (optional; defaults in code)
 - `SPOTIFY_CLIENT_ID`
 - `SPOTIFY_CLIENT_SECRET`
 - `SPOTIPY_REDIRECT_URI`
 - `DISCORD_BOT_TOKEN` (for Discord mode)
 - `AUTHORIZED_USER_ID` (for Discord mode)
+
+Optional voice configuration:
+
+- `EDGE_VOICE` (optional; defaults to `en-GB-RyanNeural`; falls back to `AZURE_SPEECH_VOICE` if set)
 
 Used by validation utilities (`api_validation.py`):
 

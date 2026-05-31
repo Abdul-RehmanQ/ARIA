@@ -1,12 +1,11 @@
 import os
-import sys
 import requests
 from dotenv import load_dotenv
 
 import google.generativeai as genai
 import cohere
 from groq import Groq
-import azure.cognitiveservices.speech as speechsdk
+import edge_tts
 
 # Force load the .env in current directory
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -58,16 +57,12 @@ def run_validation():
         print(f"[-] OpenRouter API: FAILED - {e}")
         all_passed = False
 
-    # 5. Azure Speech
+    # 5. Edge TTS (no API key required)
     try:
-        speech_config = speechsdk.SpeechConfig(
-            subscription=os.getenv("AZURE_SPEECH_KEY"), 
-            region=os.getenv("AZURE_SPEECH_REGION")
-        )
-        if speech_config:
-            print("[+] Azure Speech API: Configuration verified successfully")
+        if edge_tts:
+            print("[+] Edge TTS: Available (no API key required)")
     except Exception as e:
-        print(f"[-] Azure Speech API: FAILED - {e}")
+        print(f"[-] Edge TTS: FAILED - {e}")
         all_passed = False
 
     print("\n=============================================")

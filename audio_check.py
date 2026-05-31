@@ -1,10 +1,11 @@
 import os
 import time
 import speech_recognition as sr
-import azure.cognitiveservices.speech as speechsdk
 from dotenv import load_dotenv
 
 load_dotenv()
+
+from audio.tts import speak
 
 def test_microphone():
     print("\n--- 🎤 MICROPHONE TEST ---")
@@ -20,32 +21,22 @@ def test_microphone():
         print("Please check your Windows Privacy settings and ensure the microphone is allowed for Python.")
 
 def test_speakers():
-    print("\n--- 🔊 SPEAKER & AZURE VOICE TEST ---")
-    speech_config = speechsdk.SpeechConfig(
-        subscription=os.getenv("AZURE_SPEECH_KEY"), 
-        region=os.getenv("AZURE_SPEECH_REGION")
+    print("\n--- 🔊 SPEAKER TEST ---")
+
+    voice_name = os.getenv("EDGE_VOICE") or os.getenv("AZURE_SPEECH_VOICE") or "en-GB-RyanNeural"
+    text = (
+        "Hello ARIA framework! I am currently using the Edge voice named "
+        f"{voice_name}. If you can hear me, your speakers are working perfectly."
     )
-    
-    # You can change the voice in your .env file!
-    voice_name = os.getenv("AZURE_SPEECH_VOICE", "en-US-DavisNeural")
-    speech_config.speech_synthesis_voice_name = voice_name
-    
-    audio_config = speechsdk.audio.AudioOutputConfig(use_default_speaker=True)
-    synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
-    
-    text = f"Hello ARIA framework! I am currently using the Azure voice named {voice_name}. If you can hear me, your speakers are working perfectly."
+
     print(f"Synthesizing Voice: {voice_name}")
     print(f"Text: '{text}'\n")
-    
-    result = synthesizer.speak_text_async(text).get()
-    
-    if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+
+    try:
+        speak(text)
         print("✅ Speaker test completed successfully!")
-    else:
-        print(f"❌ Speaker test failed. Reason: {result.reason}")
-        if result.reason == speechsdk.ResultReason.Canceled:
-            cancellation_details = result.properties.get(speechsdk.PropertyId.SpeechServiceResponse_JsonErrorDetails)
-            print(f"Error details: {cancellation_details}")
+    except Exception as e:
+        print(f"❌ Speaker test failed: {e}")
 
 if __name__ == "__main__":
     print("Welcome to the ARIA Audio Setup.")
